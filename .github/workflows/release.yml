@@ -188,7 +188,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Download SBOM artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: sbom
           path: ./sbom
