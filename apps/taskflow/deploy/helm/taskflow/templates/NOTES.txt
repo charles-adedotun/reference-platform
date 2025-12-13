@@ -1,0 +1,117 @@
+TaskFlow has been successfully deployed!
+
+Release Name: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+1. Get the application URL:
+{{- if eq .Values.api.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "taskflow.fullname" . }}-api)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "Access TaskFlow API at: http://$NODE_IP:$NODE_PORT"
+{{- else if eq .Values.api.service.type "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status by running:
+    kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "taskflow.fullname" . }}-api
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "taskflow.fullname" . }}-api --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "Access TaskFlow API at: http://$SERVICE_IP:{{ .Values.api.service.port }}"
+{{- else }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "taskflow.fullname" . }}-api {{ .Values.api.service.port }}:{{ .Values.api.service.port }}
+  echo "Access TaskFlow API at: http://localhost:{{ .Values.api.service.port }}"
+{{- end }}
+
+2. Component Status:
+
+API Service:
+{{- if .Values.api.enabled }}
+  ✓ Enabled
+  Replicas: {{ .Values.api.replicaCount }}
+{{- if .Values.api.autoscaling.enabled }}
+  Autoscaling: {{ .Values.api.autoscaling.minReplicas }}-{{ .Values.api.autoscaling.maxReplicas }} replicas
+{{- end }}
+{{- else }}
+  ✗ Disabled
+{{- end }}
+
+Worker Service:
+{{- if .Values.worker.enabled }}
+  ✓ Enabled
+  Replicas: {{ .Values.worker.replicaCount }}
+  Concurrency: {{ .Values.worker.concurrency }}
+{{- if .Values.worker.autoscaling.enabled }}
+  Autoscaling: {{ .Values.worker.autoscaling.minReplicas }}-{{ .Values.worker.autoscaling.maxReplicas }} replicas
+{{- end }}
+{{- else }}
+  ✗ Disabled
+{{- end }}
+
+Cron Service:
+{{- if .Values.cron.enabled }}
+  ✓ Enabled
+  Schedule: {{ .Values.cron.schedule }}
+{{- else }}
+  ✗ Disabled
+{{- end }}
+
+PostgreSQL:
+{{- if .Values.postgresql.enabled }}
+  ✓ Enabled
+  Database: {{ .Values.postgresql.auth.database }}
+{{- if .Values.postgresql.persistence.enabled }}
+  Persistence: {{ .Values.postgresql.persistence.size }}
+{{- end }}
+{{- else }}
+  ✗ Disabled (using external database)
+{{- end }}
+
+Redis:
+{{- if .Values.redis.enabled }}
+  ✓ Enabled
+{{- if .Values.redis.persistence.enabled }}
+  Persistence: {{ .Values.redis.persistence.size }}
+{{- end }}
+{{- else }}
+  ✗ Disabled (using external Redis)
+{{- end }}
+
+Telemetry:
+{{- if .Values.telemetry.enabled }}
+  ✓ Enabled
+  Endpoint: {{ .Values.telemetry.endpoint }}
+{{- else }}
+  ✗ Disabled
+{{- end }}
+
+3. Useful Commands:
+
+# View API logs
+kubectl logs -f -l app.kubernetes.io/component=api -n {{ .Release.Namespace }}
+
+# View worker logs
+kubectl logs -f -l app.kubernetes.io/component=worker -n {{ .Release.Namespace }}
+
+# View all pods
+kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "taskflow.name" . }}
+
+# Check migration job status
+kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=migration
+
+# Scale workers manually
+kubectl scale deployment {{ include "taskflow.fullname" . }}-worker --replicas=10 -n {{ .Release.Namespace }}
+
+4. Health Checks:
+
+# API health endpoint
+curl http://localhost:{{ .Values.api.service.port }}/health
+
+# API readiness endpoint
+curl http://localhost:{{ .Values.api.service.port }}/ready
+
+5. Documentation:
+
+For more information about TaskFlow, visit:
+- Documentation: https://docs.taskflow.io
+- GitHub: https://github.com/taskflow/taskflow
+- Support: https://github.com/taskflow/taskflow/issues
+
+Thank you for using TaskFlow!

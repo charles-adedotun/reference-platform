@@ -1,0 +1,56 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "taskflow.fullname" . }}-migration-{{ .Release.Revision }}
+  labels:
+    {{- include "taskflow.migration.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "taskflow.migration.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "taskflow.serviceAccountName" . }}
+      {{- with .Values.migration.image.pullPolicy }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.migration.podSecurityContext | nindent 8 }}
+      restartPolicy: Never
+      containers:
+      - name: migration
+        image: {{ include "taskflow.migration.image" . }}
+        imagePullPolicy: {{ .Values.migration.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.migration.securityContext | nindent 10 }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Running database migrations..."
+            # Wait for database to be ready
+            until pg_isready -h {{ include "taskflow.fullname" . }}-postgresql -p {{ .Values.postgresql.service.port }} -U {{ .Values.postgresql.auth.username }}; do
+              echo "Waiting for database..."
+              sleep 2
+            done
+            echo "Database is ready. Running migrations..."
+            # Run migrations (adjust command based on your migration tool)
+            alembic upgrade head || migrate-up || python manage.py migrate
+            echo "Migrations completed successfully."
+        env:
+        {{- include "taskflow.commonEnv" . | nindent 8 }}
+        resources:
+          {{- toYaml .Values.migration.resources | nindent 10 }}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+{{- end }}

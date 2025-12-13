@@ -1,0 +1,62 @@
+{{- if .Values.cron.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "taskflow.fullname" . }}-cron
+  labels:
+    {{- include "taskflow.cron.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.cron.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.cron.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cron.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ .Values.cron.concurrencyPolicy }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "taskflow.cron.selectorLabels" . | nindent 8 }}
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "taskflow.cron.selectorLabels" . | nindent 12 }}
+        spec:
+          serviceAccountName: {{ include "taskflow.serviceAccountName" . }}
+          {{- with .Values.cron.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.cron.podSecurityContext | nindent 12 }}
+          restartPolicy: {{ .Values.cron.restartPolicy }}
+          containers:
+          - name: cron
+            image: {{ include "taskflow.cron.image" . }}
+            imagePullPolicy: {{ .Values.cron.image.pullPolicy }}
+            securityContext:
+              {{- toYaml .Values.cron.securityContext | nindent 14 }}
+            env:
+            {{- include "taskflow.commonEnv" . | nindent 12 }}
+            {{- with .Values.cron.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            resources:
+              {{- toYaml .Values.cron.resources | nindent 14 }}
+            volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          volumes:
+          - name: tmp
+            emptyDir: {}
+          {{- with .Values.cron.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cron.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cron.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

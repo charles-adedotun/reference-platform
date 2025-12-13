@@ -1,0 +1,16 @@
+apiVersion: v2
+name: taskflow
+description: A Helm chart for TaskFlow - Distributed Task Execution Platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - taskflow
+  - task-execution
+  - workflow
+  - distributed-system
+maintainers:
+  - name: TaskFlow Team
+home: https://github.com/taskflow/taskflow
+sources:
+  - https://github.com/taskflow/taskflow
