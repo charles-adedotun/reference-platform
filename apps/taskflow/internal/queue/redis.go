@@ -70,7 +70,7 @@ func (q *Queue) HealthCheck(ctx context.Context) error {
 	defer cancel()
 
 	if err := q.client.Ping(ctx).Err(); err != nil {
-		return fmt.Errorf("Redis health check failed: %w", err)
+		return fmt.Errorf("redis health check failed: %w", err)
 	}
 
 	return nil

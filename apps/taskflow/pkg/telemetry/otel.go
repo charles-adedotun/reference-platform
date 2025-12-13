@@ -13,6 +13,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -32,7 +33,7 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 	// If no OTLP endpoint is provided, use a no-op tracer provider
 	if otelEndpoint == "" {
 		logger.Info("OTLP endpoint not configured, using no-op tracer")
-		otel.SetTracerProvider(trace.NewNoopTracerProvider())
+		otel.SetTracerProvider(noop.NewTracerProvider())
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 		return func(ctx context.Context) error { return nil }, nil
 	}
@@ -47,7 +48,7 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 	)
 	if err != nil {
 		logger.Warn("failed to connect to OTLP endpoint, using no-op tracer", "error", err)
-		otel.SetTracerProvider(trace.NewNoopTracerProvider())
+		otel.SetTracerProvider(noop.NewTracerProvider())
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 		return func(ctx context.Context) error { return nil }, nil
 	}

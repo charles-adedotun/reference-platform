@@ -210,7 +210,7 @@ func (db *DB) UpdateTask(ctx context.Context, id string, req *models.UpdateTaskR
 		args = append(args, *req.Priority)
 	}
 
-	query += fmt.Sprintf(" WHERE id = $1 RETURNING id, title, description, status, priority, created_at, updated_at, completed_at")
+	query += " WHERE id = $1 RETURNING id, title, description, status, priority, created_at, updated_at, completed_at"
 	args = append([]interface{}{id}, args...)
 
 	task := &models.Task{}
