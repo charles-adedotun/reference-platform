@@ -16,7 +16,8 @@ import (
 )
 
 // InitTracer initializes OpenTelemetry tracing with OTLP exporter
-func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *slog.Logger) (func(context.Context) error, error) {
+// Set insecure to true only for local development without TLS
+func InitTracer(ctx context.Context, serviceName, otelEndpoint string, insecure bool, logger *slog.Logger) (func(context.Context) error, error) {
 	// Create resource with service name
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -37,10 +38,13 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 
 	// Create OTLP trace exporter using the modern API
 	// The exporter manages its own gRPC connection internally
-	traceExporter, err := otlptracegrpc.New(ctx,
+	opts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(otelEndpoint),
-		otlptracegrpc.WithInsecure(),
-	)
+	}
+	if insecure {
+		opts = append(opts, otlptracegrpc.WithInsecure())
+	}
+	traceExporter, err := otlptracegrpc.New(ctx, opts...)
 	if err != nil {
 		logger.Warn("failed to create OTLP exporter, using no-op tracer", "error", err)
 		otel.SetTracerProvider(noop.NewTracerProvider())

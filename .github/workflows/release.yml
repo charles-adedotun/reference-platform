@@ -68,7 +68,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: apps/taskflow
+          file: apps/taskflow/build/Dockerfile.api
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -194,16 +195,30 @@ jobs:
           path: ./sbom
 
       - name: Build release binaries
+        working-directory: apps/taskflow
         run: |
           mkdir -p dist
-          GOOS=linux GOARCH=amd64 go build -o dist/app-linux-amd64 ./cmd/...
-          GOOS=linux GOARCH=arm64 go build -o dist/app-linux-arm64 ./cmd/...
-          GOOS=darwin GOARCH=amd64 go build -o dist/app-darwin-amd64 ./cmd/...
-          GOOS=darwin GOARCH=arm64 go build -o dist/app-darwin-arm64 ./cmd/...
-          GOOS=windows GOARCH=amd64 go build -o dist/app-windows-amd64.exe ./cmd/...
+          # Build API
+          GOOS=linux GOARCH=amd64 go build -o dist/api-linux-amd64 ./cmd/api
+          GOOS=linux GOARCH=arm64 go build -o dist/api-linux-arm64 ./cmd/api
+          GOOS=darwin GOARCH=amd64 go build -o dist/api-darwin-amd64 ./cmd/api
+          GOOS=darwin GOARCH=arm64 go build -o dist/api-darwin-arm64 ./cmd/api
+          GOOS=windows GOARCH=amd64 go build -o dist/api-windows-amd64.exe ./cmd/api
+          # Build Worker
+          GOOS=linux GOARCH=amd64 go build -o dist/worker-linux-amd64 ./cmd/worker
+          GOOS=linux GOARCH=arm64 go build -o dist/worker-linux-arm64 ./cmd/worker
+          GOOS=darwin GOARCH=amd64 go build -o dist/worker-darwin-amd64 ./cmd/worker
+          GOOS=darwin GOARCH=arm64 go build -o dist/worker-darwin-arm64 ./cmd/worker
+          GOOS=windows GOARCH=amd64 go build -o dist/worker-windows-amd64.exe ./cmd/worker
+          # Build Cron
+          GOOS=linux GOARCH=amd64 go build -o dist/cron-linux-amd64 ./cmd/cron
+          GOOS=linux GOARCH=arm64 go build -o dist/cron-linux-arm64 ./cmd/cron
+          GOOS=darwin GOARCH=amd64 go build -o dist/cron-darwin-amd64 ./cmd/cron
+          GOOS=darwin GOARCH=arm64 go build -o dist/cron-darwin-arm64 ./cmd/cron
+          GOOS=windows GOARCH=amd64 go build -o dist/cron-windows-amd64.exe ./cmd/cron
 
       - name: Generate checksums
-        working-directory: dist
+        working-directory: apps/taskflow/dist
         run: |
           sha256sum * > checksums.txt
 
@@ -229,7 +244,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
           files: |
-            dist/*
+            apps/taskflow/dist/*
             sbom/*
           generate_release_notes: true
 

@@ -97,7 +97,7 @@ jobs:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
           terraform plan -no-color -out=tfplan \
-            -var-file="environments/${{ matrix.environment }}.tfvars"
+            -var-file="environments/aws/${{ matrix.environment }}/terraform.tfvars"
         continue-on-error: true
 
       - name: Create Plan Summary
@@ -151,7 +151,7 @@ jobs:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
           terraform destroy -auto-approve \
-            -var-file="environments/${{ matrix.environment }}.tfvars"
+            -var-file="environments/aws/${{ matrix.environment }}/terraform.tfvars"
 
       - name: Upload Terraform Plan
         if: github.event_name == 'pull_request'

@@ -33,7 +33,7 @@ func main() {
 
 	// Initialize OpenTelemetry
 	ctx := context.Background()
-	shutdownTracer, err := telemetry.InitTracer(ctx, cfg.ServiceName+"-cron", cfg.OTELEndpoint, logger)
+	shutdownTracer, err := telemetry.InitTracer(ctx, cfg.ServiceName+"-cron", cfg.OTELEndpoint, cfg.OTELInsecure, logger)
 	if err != nil {
 		logger.Error("Failed to initialize tracer", "error", err)
 		os.Exit(1)

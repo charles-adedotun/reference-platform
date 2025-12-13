@@ -22,6 +22,7 @@ type Config struct {
 
 	// OpenTelemetry configuration
 	OTELEndpoint string
+	OTELInsecure bool // Use insecure connection (no TLS) - only for local development
 
 	// Service name
 	ServiceName string
@@ -64,6 +65,7 @@ func LoadConfig() (*Config, error) {
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
 		RedisDB:         getEnvAsInt("REDIS_DB", 0),
 		OTELEndpoint:    getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		OTELInsecure:    getEnvAsBool("OTEL_INSECURE", false),
 		ServiceName:     getEnv("SERVICE_NAME", "taskflow"),
 		ShutdownTimeout: getEnvAsDuration("SHUTDOWN_TIMEOUT", "30s"),
 	}
@@ -102,4 +104,14 @@ func getEnvAsDuration(key string, defaultValue string) time.Duration {
 		duration, _ = time.ParseDuration(defaultValue)
 	}
 	return duration
+}
+
+// getEnvAsBool retrieves an environment variable as a boolean or returns a default value
+func getEnvAsBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			return boolVal
+		}
+	}
+	return defaultValue
 }
