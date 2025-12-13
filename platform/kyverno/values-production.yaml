@@ -1,0 +1,12 @@
+# Production Kyverno values
+# Use with: helm upgrade --values values-production.yaml
+#
+# This overrides the default Audit mode to Enforce mode,
+# which actively blocks non-compliant resources.
+
+# Override validation failure action for all policies
+# Default is "Audit" (log only), production should use "Enforce" (block)
+validationFailureAction: Enforce
+
+# Note: To apply these settings, policies need to be templated
+# or you can manually edit each policy's validationFailureAction

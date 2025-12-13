@@ -45,7 +45,14 @@ spec:
       port: 53
   {{- if .Values.telemetry.enabled }}
   # Allow egress to telemetry endpoint
-  - ports:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.telemetry.namespace | default "monitoring" }}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: opentelemetry-collector
+    ports:
     - protocol: TCP
       port: 4317
     - protocol: TCP
@@ -93,7 +100,14 @@ spec:
       port: 53
   {{- if .Values.telemetry.enabled }}
   # Allow egress to telemetry endpoint
-  - ports:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.telemetry.namespace | default "monitoring" }}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: opentelemetry-collector
+    ports:
     - protocol: TCP
       port: 4317
     - protocol: TCP

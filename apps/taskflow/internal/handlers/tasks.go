@@ -73,8 +73,11 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	// Enqueue task for processing
 	if err := h.queue.Enqueue(ctx, task.ID, "process"); err != nil {
-		h.logger.WarnContext(ctx, "Failed to enqueue task", "task_id", task.ID, "error", err)
-		// Don't fail the request if queue fails
+		h.logger.ErrorContext(ctx, "Failed to enqueue task", "task_id", task.ID, "error", err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "Failed to enqueue task")
+		h.respondError(w, http.StatusServiceUnavailable, "Task created but queue unavailable, please retry")
+		return
 	}
 
 	span.SetAttributes(attribute.String("task.id", task.ID))

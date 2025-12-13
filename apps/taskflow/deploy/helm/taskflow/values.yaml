@@ -246,9 +246,10 @@ postgresql:
   auth:
     database: taskflow
     username: taskflow
-    password: taskflow-secret-password
+    # REQUIRED: Set via --set postgresql.auth.password=xxx or use existingSecret
+    password: ""
     # In production, use existing secret:
-    # existingSecret: "taskflow-postgresql-secret"
+    existingSecret: ""
 
   persistence:
     enabled: true
@@ -280,7 +281,7 @@ postgresql:
     capabilities:
       drop:
         - ALL
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     runAsNonRoot: true
     runAsUser: 999
 
@@ -294,9 +295,10 @@ redis:
     pullPolicy: IfNotPresent
 
   auth:
-    enabled: false
-    # In production, enable auth and set password
-    # password: "redis-secret-password"
+    enabled: true
+    # REQUIRED: Set via --set redis.auth.password=xxx
+    password: ""
+    existingSecret: ""
 
   persistence:
     enabled: true
@@ -335,6 +337,7 @@ redis:
 # Telemetry configuration
 telemetry:
   enabled: true
+  namespace: monitoring
   endpoint: "http://otel-collector:4317"
   sampleRate: 0.1
 

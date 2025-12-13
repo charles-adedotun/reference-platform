@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	"github.com/reference-platform/taskflow/internal/config"
 	"github.com/reference-platform/taskflow/internal/database"
 	"github.com/reference-platform/taskflow/internal/handlers"
@@ -79,6 +80,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(httprate.LimitByIP(100, time.Minute))
 
 	// Health check routes
 	r.Get("/health", healthHandler.Health)

@@ -170,7 +170,11 @@ func (db *DB) ListTasks(ctx context.Context) ([]*models.Task, error) {
 	return tasks, nil
 }
 
-// UpdateTask updates a task by ID
+// UpdateTask updates a task with the given fields.
+// Security note: This function uses dynamic SQL construction but is safe because:
+// 1. All values are passed as parameterized query arguments ($1, $2, etc.)
+// 2. Column names are hardcoded strings, not user input
+// 3. The WHERE clause uses a parameterized ID
 func (db *DB) UpdateTask(ctx context.Context, id string, req *models.UpdateTaskRequest) (*models.Task, error) {
 	// Build dynamic update query
 	query := `UPDATE tasks SET updated_at = NOW()`

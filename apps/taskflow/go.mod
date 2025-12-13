@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/go-chi/chi/v5 v5.0.11
+	github.com/go-chi/httprate v0.14.1
 	github.com/jackc/pgx/v5 v5.5.1
 	github.com/redis/go-redis/v9 v9.4.0
 	go.opentelemetry.io/otel v1.21.0

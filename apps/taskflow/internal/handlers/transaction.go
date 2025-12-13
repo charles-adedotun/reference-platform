@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"log/slog"
-	"math/rand"
+	mathrand "math/rand"
 	"net/http"
 	"time"
 
@@ -15,6 +17,15 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
+
+func init() {
+	var b [8]byte
+	_, err := rand.Read(b[:])
+	if err != nil {
+		panic("failed to seed random number generator: " + err.Error())
+	}
+	mathrand.Seed(int64(binary.LittleEndian.Uint64(b[:])))
+}
 
 // TransactionHandler handles synthetic transaction monitoring
 type TransactionHandler struct {
@@ -189,7 +200,7 @@ func (h *TransactionHandler) createSyntheticTask(ctx context.Context) (*models.T
 	req := &models.CreateTaskRequest{
 		Title:       "Synthetic monitoring task " + time.Now().Format(time.RFC3339),
 		Description: "This task is created for synthetic monitoring purposes",
-		Priority:    rand.Intn(5),
+		Priority:    mathrand.Intn(5),
 	}
 
 	return h.db.CreateTask(ctx, req)

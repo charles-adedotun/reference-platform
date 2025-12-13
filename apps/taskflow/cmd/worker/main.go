@@ -95,21 +95,34 @@ func NewWorker(db *database.DB, queue *queue.Queue, logger *slog.Logger) *Worker
 
 // Run starts the worker loop
 func (w *Worker) Run(shutdown <-chan os.Signal) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle shutdown in a separate goroutine
+	go func() {
+		<-shutdown
+		w.logger.Info("Shutdown signal received, stopping worker...")
+		cancel()
+	}()
 
 	for {
 		select {
-		case <-shutdown:
-			w.logger.Info("Shutdown signal received, stopping worker...")
+		case <-ctx.Done():
+			w.logger.Info("Context cancelled, stopping worker...")
 			return
 
 		default:
 			// Dequeue task with timeout
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			msg, err := w.queue.Dequeue(ctx, 5*time.Second)
-			cancel()
+			dequeueCtx, dequeueCancel := context.WithTimeout(ctx, 5*time.Second)
+			msg, err := w.queue.Dequeue(dequeueCtx, 5*time.Second)
+			dequeueCancel()
 
 			if err != nil {
+				// Check if context was cancelled (graceful shutdown)
+				if ctx.Err() != nil {
+					w.logger.Info("Stopping worker due to context cancellation")
+					return
+				}
 				w.logger.Error("Failed to dequeue task", "error", err)
 				time.Sleep(1 * time.Second)
 				continue

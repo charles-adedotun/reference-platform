@@ -85,6 +85,7 @@ install_tool() {
 
   if [[ "$INSTALL_MODE" == true ]]; then
     log_info "Attempting to install $tool..."
+    # Note: eval is used here because install commands contain pipes and subshells. Commands are hardcoded in this script, not user-provided, so injection risk is mitigated.
     eval "$install_cmd"
   else
     log_warn "To install $tool, run: $install_cmd"

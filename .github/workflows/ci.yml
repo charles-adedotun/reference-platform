@@ -144,7 +144,11 @@ jobs:
       - name: Run kubeconform
         run: |
           if [ -d "charts" ]; then
-            curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+            KUBECONFORM_VERSION="v0.6.4"
+            KUBECONFORM_SHA256="2b4ebeaa4d5ac4843cf8f7b7e66a8874252b6b71bc7cbfc4ef1cbf85acec7c07"
+            curl -sSL -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+            echo "${KUBECONFORM_SHA256}  kubeconform.tar.gz" | sha256sum -c -
+            tar xzf kubeconform.tar.gz
             for chart in charts/*/; do
               echo "Validating $chart with kubeconform"
               helm template test "$chart" | ./kubeconform -strict -summary
