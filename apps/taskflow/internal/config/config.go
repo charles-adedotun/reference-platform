@@ -28,6 +28,9 @@ type Config struct {
 
 	// Graceful shutdown timeout
 	ShutdownTimeout time.Duration
+
+	// Database SSL mode (disable, require, verify-ca, verify-full)
+	DBSSLMode string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -35,6 +38,8 @@ func LoadConfig() (*Config, error) {
 	// Support both DATABASE_URL and separate DB_* env vars
 	// Separate vars are preferred for security (password not in URL)
 	databaseURL := getEnv("DATABASE_URL", "")
+	// SSL mode: disable (dev only), require (default), verify-ca, verify-full (production)
+	dbSSLMode := getEnv("DB_SSL_MODE", "require")
 	if databaseURL == "" {
 		// Construct from separate env vars
 		dbHost := getEnv("DB_HOST", "localhost")
@@ -43,17 +48,18 @@ func LoadConfig() (*Config, error) {
 		dbUser := getEnv("DB_USER", "taskflow")
 		dbPassword := getEnv("DB_PASSWORD", "")
 		if dbPassword != "" {
-			databaseURL = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
-				dbUser, dbPassword, dbHost, dbPort, dbName)
+			databaseURL = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+				dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
 		} else {
-			databaseURL = fmt.Sprintf("postgresql://%s@%s:%s/%s?sslmode=disable",
-				dbUser, dbHost, dbPort, dbName)
+			databaseURL = fmt.Sprintf("postgresql://%s@%s:%s/%s?sslmode=%s",
+				dbUser, dbHost, dbPort, dbName, dbSSLMode)
 		}
 	}
 
 	cfg := &Config{
 		ServerPort:      getEnv("PORT", "8080"),
 		DatabaseURL:     databaseURL,
+		DBSSLMode:       dbSSLMode,
 		RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
 		RedisDB:         getEnvAsInt("REDIS_DB", 0),

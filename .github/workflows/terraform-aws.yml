@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/aws/**'
+      - 'infra/terraform/**'
       - '.github/workflows/terraform-aws.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'terraform/aws/**'
+      - 'infra/terraform/**'
       - '.github/workflows/terraform-aws.yml'
   workflow_dispatch:
     inputs:
@@ -72,13 +72,13 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         run: terraform fmt -check -recursive
         continue-on-error: true
 
       - name: Terraform Init
         id: init
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         run: |
           terraform init \
             -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
@@ -87,12 +87,12 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
@@ -139,14 +139,14 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
         if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
-        working-directory: terraform/aws
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
@@ -158,7 +158,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-${{ matrix.environment }}
-          path: terraform/aws/tfplan
+          path: infra/terraform/tfplan
           retention-days: 5
 
   tfsec:
@@ -174,7 +174,7 @@ jobs:
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          working_directory: terraform/aws
+          working_directory: infra/terraform
           format: sarif
           soft_fail: true
 
@@ -197,7 +197,7 @@ jobs:
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: terraform/aws
+          directory: infra/terraform
           framework: terraform
           output_format: sarif
           output_file_path: checkov-results.sarif

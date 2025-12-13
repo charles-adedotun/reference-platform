@@ -100,12 +100,14 @@ func main() {
 	})
 
 	// Create HTTP server
+	// Note: Server timeouts must be longer than middleware timeout (60s)
+	// to allow proper timeout responses to clients
 	server := &http.Server{
 		Addr:         ":" + cfg.ServerPort,
 		Handler:      r,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  70 * time.Second,
+		WriteTimeout: 70 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	// Start server in a goroutine

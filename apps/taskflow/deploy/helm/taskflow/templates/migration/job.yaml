@@ -17,7 +17,7 @@ spec:
         {{- include "taskflow.migration.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "taskflow.serviceAccountName" . }}
-      {{- with .Values.migration.image.pullPolicy }}
+      {{- with .Values.api.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

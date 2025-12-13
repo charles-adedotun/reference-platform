@@ -113,9 +113,9 @@ func (w *Worker) Run(shutdown <-chan os.Signal) {
 
 		default:
 			// Dequeue task with timeout
-			dequeueCtx, dequeueCancel := context.WithTimeout(ctx, 5*time.Second)
-			msg, err := w.queue.Dequeue(dequeueCtx, 5*time.Second)
-			dequeueCancel()
+			// Note: Dequeue uses BLPop with the timeout parameter internally.
+			// We pass the parent context for cancellation support during shutdown.
+			msg, err := w.queue.Dequeue(ctx, 5*time.Second)
 
 			if err != nil {
 				// Check if context was cancelled (graceful shutdown)

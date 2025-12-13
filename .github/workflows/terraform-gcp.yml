@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/gcp/**'
+      - 'infra/terraform/**'
       - '.github/workflows/terraform-gcp.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'terraform/gcp/**'
+      - 'infra/terraform/**'
       - '.github/workflows/terraform-gcp.yml'
   workflow_dispatch:
     inputs:
@@ -77,13 +77,13 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         run: terraform fmt -check -recursive
         continue-on-error: true
 
       - name: Terraform Init
         id: init
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         run: |
           terraform init \
             -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
@@ -91,12 +91,12 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
           TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
@@ -144,7 +144,7 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
           TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Terraform Destroy
         if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
-        working-directory: terraform/gcp
+        working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
           TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
@@ -165,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-gcp-${{ matrix.environment }}
-          path: terraform/gcp/tfplan
+          path: infra/terraform/tfplan
           retention-days: 5
 
   tfsec:
@@ -181,7 +181,7 @@ jobs:
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          working_directory: terraform/gcp
+          working_directory: infra/terraform
           format: sarif
           soft_fail: true
 
@@ -204,7 +204,7 @@ jobs:
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: terraform/gcp
+          directory: infra/terraform
           framework: terraform
           output_format: sarif
           output_file_path: checkov-results.sarif

@@ -34,6 +34,7 @@ readonly NC='\033[0m' # No Color
 ENVIRONMENT="${1:-all}"
 OUTPUT_FORMAT="${2:-json}"
 OUTPUT_DIR="./status-reports"
+# Note: This date format is POSIX-compliant and works on both GNU (Linux) and BSD (macOS) date
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Environments to check

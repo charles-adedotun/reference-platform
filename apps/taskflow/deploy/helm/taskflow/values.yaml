@@ -235,6 +235,11 @@ migration:
     runAsUser: 1000
 
 # PostgreSQL configuration
+# SECURITY WARNING: For production deployments:
+# 1. NEVER commit passwords to version control
+# 2. Use existingSecret to reference a pre-created Kubernetes secret
+# 3. Create secrets via: kubectl create secret generic taskflow-postgresql --from-literal=postgres-password=<secure-password>
+# 4. Or use external secret management (Vault, AWS Secrets Manager, etc.)
 postgresql:
   enabled: true
 
@@ -246,10 +251,11 @@ postgresql:
   auth:
     database: taskflow
     username: taskflow
-    # REQUIRED: Set via --set postgresql.auth.password=xxx or use existingSecret
+    # DEVELOPMENT ONLY: Set via --set postgresql.auth.password=xxx
+    # PRODUCTION: Use existingSecret instead (see SECURITY WARNING above)
     password: ""
-    # In production, use existing secret:
-    existingSecret: ""
+    # Production: reference a pre-created secret containing 'postgres-password' key
+    existingSecret: ""  # e.g., "taskflow-postgresql-secret"
 
   persistence:
     enabled: true
@@ -287,6 +293,7 @@ postgresql:
     runAsUser: 999
 
 # Redis configuration
+# SECURITY WARNING: Same guidance as PostgreSQL applies - see above
 redis:
   enabled: true
 
@@ -297,9 +304,11 @@ redis:
 
   auth:
     enabled: true
-    # REQUIRED: Set via --set redis.auth.password=xxx
+    # DEVELOPMENT ONLY: Set via --set redis.auth.password=xxx
+    # PRODUCTION: Use existingSecret instead
     password: ""
-    existingSecret: ""
+    # Production: reference a pre-created secret containing 'redis-password' key
+    existingSecret: ""  # e.g., "taskflow-redis-secret"
 
   persistence:
     enabled: true
@@ -391,6 +400,12 @@ config:
   database:
     maxConnections: 100
     connectionTimeout: 30
+    # SSL mode for database connections:
+    # - disable: No SSL (dev only, NOT for production)
+    # - require: Use SSL but don't verify certificate (minimum for production)
+    # - verify-ca: Verify server certificate against CA
+    # - verify-full: Verify server certificate and hostname (most secure)
+    sslMode: require  # Options: disable (dev only), require, verify-ca, verify-full
 
   # Task configuration
   task:

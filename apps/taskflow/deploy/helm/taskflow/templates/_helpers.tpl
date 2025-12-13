@@ -198,6 +198,9 @@ Common environment variables
 Note: Passwords are injected from secrets, not embedded in URLs
 */}}
 {{- define "taskflow.commonEnv" -}}
+# Server port
+- name: PORT
+  value: {{ .Values.api.service.targetPort | quote }}
 # Database configuration (password from secret, not in URL)
 - name: DB_HOST
   value: {{ include "taskflow.postgresql.host" . | quote }}
@@ -210,8 +213,10 @@ Note: Passwords are injected from secrets, not embedded in URLs
 - name: DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: {{ include "taskflow.fullname" . }}-postgresql
-      key: password
+      name: {{ .Values.postgresql.auth.existingSecret | default (printf "%s-postgresql" (include "taskflow.fullname" .)) }}
+      key: postgres-password
+- name: DB_SSL_MODE
+  value: {{ .Values.config.database.sslMode | default "disable" | quote }}
 # Redis configuration (password from secret, not in URL)
 - name: REDIS_ADDR
   value: {{ printf "%s:%d" (include "taskflow.redis.host" .) (.Values.redis.service.port | int) | quote }}
@@ -219,8 +224,8 @@ Note: Passwords are injected from secrets, not embedded in URLs
 - name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: {{ include "taskflow.fullname" . }}-redis
-      key: password
+      name: {{ .Values.redis.auth.existingSecret | default (printf "%s-redis" (include "taskflow.fullname" .)) }}
+      key: redis-password
 {{- end }}
 - name: LOG_LEVEL
   value: {{ .Values.config.logLevel | quote }}

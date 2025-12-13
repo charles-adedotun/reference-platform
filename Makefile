@@ -25,7 +25,7 @@ help: ## Display this help message
 
 kind-up: ## Create Kind cluster, install ArgoCD via Helm, apply root app
 	@echo "$(GREEN)Creating Kind cluster: $(CLUSTER_NAME)$(NC)"
-	kind create cluster --name $(CLUSTER_NAME) --config kind/kind-config.yaml || true
+	kind create cluster --name $(CLUSTER_NAME) --config gitops/bootstrap/kind-config.yaml
 	@echo ""
 	@echo "$(GREEN)Installing ArgoCD via Helm$(NC)"
 	helm repo add argo https://argoproj.github.io/argo-helm || true
@@ -35,6 +35,8 @@ kind-up: ## Create Kind cluster, install ArgoCD via Helm, apply root app
 		--namespace $(ARGOCD_NAMESPACE) \
 		--version $(ARGOCD_VERSION) \
 		--set configs.params."application\.namespaces"="*" \
+		--set server.service.type=NodePort \
+		--set server.service.nodePortHttp=30080 \
 		--wait --timeout $(TIMEOUT)
 	@echo ""
 	@echo "$(GREEN)Waiting for ArgoCD to be ready$(NC)"
@@ -44,61 +46,66 @@ kind-up: ## Create Kind cluster, install ArgoCD via Helm, apply root app
 		deployment/argocd-applicationset-controller \
 		-n $(ARGOCD_NAMESPACE)
 	@echo ""
-	@echo "$(GREEN)Applying root ArgoCD Application$(NC)"
-	kubectl apply -f argocd/root-app.yaml
-	@echo ""
 	@echo "$(GREEN)ArgoCD admin password:$(NC)"
-	kubectl -n $(ARGOCD_NAMESPACE) get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+	@kubectl -n $(ARGOCD_NAMESPACE) get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo ""
 	@echo ""
 	@echo "$(GREEN)Cluster setup complete!$(NC)"
-	@echo "Run 'make demo' to start port-forwarding and access services"
+	@echo "  ArgoCD UI: http://localhost:30080"
+	@echo "Run 'make demo' to deploy the TaskFlow app"
 
 kind-down: ## Delete Kind cluster
 	@echo "$(YELLOW)Deleting Kind cluster: $(CLUSTER_NAME)$(NC)"
 	kind delete cluster --name $(CLUSTER_NAME)
 	@echo "$(GREEN)Cluster deleted$(NC)"
 
-demo: ## Wait for platform ready, start port-forwarding
-	@echo "$(GREEN)Waiting for platform to be ready$(NC)"
-	@echo "Waiting for API deployment..."
-	kubectl wait --for=condition=available --timeout=$(TIMEOUT) deployment/api -n $(APP_NAMESPACE) || echo "$(YELLOW)API deployment not yet available$(NC)"
+demo: ## Deploy TaskFlow app via Helm and wait for ready
+	@echo "$(GREEN)Deploying TaskFlow application$(NC)"
+	kubectl create namespace taskflow --dry-run=client -o yaml | kubectl apply -f -
+	helm upgrade --install taskflow apps/taskflow/deploy/helm/taskflow \
+		--namespace taskflow \
+		--set postgresql.auth.password=taskflow123 \
+		--set redis.auth.password=redis123 \
+		--set api.service.type=NodePort \
+		--set api.service.nodePort=32000 \
+		--wait --timeout $(TIMEOUT)
 	@echo ""
-	@echo "$(GREEN)Starting port-forwarding:$(NC)"
-	@echo "  - ArgoCD UI: http://localhost:8080"
-	@echo "  - API: http://localhost:8081"
+	@echo "$(GREEN)Waiting for TaskFlow to be ready$(NC)"
+	kubectl wait --for=condition=available --timeout=$(TIMEOUT) \
+		deployment/taskflow-api -n taskflow || true
 	@echo ""
-	@echo "$(YELLOW)Press Ctrl+C to stop port-forwarding$(NC)"
+	@echo "$(GREEN)TaskFlow deployed!$(NC)"
+	@echo "  API: http://localhost:8080"
+	@echo "  ArgoCD: http://localhost:30080"
 	@echo ""
-	@trap 'kill 0' EXIT; \
-	kubectl port-forward svc/argocd-server -n $(ARGOCD_NAMESPACE) 8080:443 & \
-	kubectl port-forward svc/api -n $(APP_NAMESPACE) 8081:80 & \
-	wait
+	@echo "Run 'make smoke' to test endpoints"
 
 smoke: ## Run smoke tests (curl /health and /api/v1/transaction)
 	@echo "$(GREEN)Running smoke tests$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Testing /health endpoint:$(NC)"
-	@curl -s -w "\nHTTP Status: %{http_code}\n" http://localhost:8081/health || echo "$(RED)Failed to reach /health$(NC)"
+	@curl -s -w "\nHTTP Status: %{http_code}\nLatency: %{time_total}s\n" http://localhost:8080/health || echo "$(RED)Failed to reach /health$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Testing /api/v1/transaction endpoint:$(NC)"
-	@curl -s -w "\nHTTP Status: %{http_code}\n" http://localhost:8081/api/v1/transaction || echo "$(RED)Failed to reach /api/v1/transaction$(NC)"
+	@curl -s -X POST -w "\nHTTP Status: %{http_code}\nLatency: %{time_total}s\n" http://localhost:8080/api/v1/transaction || echo "$(RED)Failed to reach /api/v1/transaction$(NC)"
 	@echo ""
 	@echo "$(GREEN)Smoke tests complete$(NC)"
 
 lint: ## Run linters on Go code
 	@echo "$(GREEN)Running linters$(NC)"
-	cd api && golangci-lint run --timeout=5m ./...
+	cd apps/taskflow && golangci-lint run --timeout=5m ./...
 	@echo "$(GREEN)Linting complete$(NC)"
 
 test: ## Run unit tests
 	@echo "$(GREEN)Running tests$(NC)"
-	cd api && go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-	cd api && go tool cover -func=coverage.out
+	cd apps/taskflow && go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	cd apps/taskflow && go tool cover -func=coverage.out
 	@echo "$(GREEN)Tests complete$(NC)"
 
 build: ## Build Go application
-	@echo "$(GREEN)Building API$(NC)"
-	cd api && go build -v -o bin/api ./cmd/api
+	@echo "$(GREEN)Building TaskFlow$(NC)"
+	cd apps/taskflow && go build -v -o bin/api ./cmd/api
+	cd apps/taskflow && go build -v -o bin/worker ./cmd/worker
+	cd apps/taskflow && go build -v -o bin/cron ./cmd/cron
 	@echo "$(GREEN)Build complete$(NC)"
 
 sbom: ## Generate Software Bill of Materials
