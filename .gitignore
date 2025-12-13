@@ -63,7 +63,7 @@ secrets/
 
 # Build artifacts
 dist/
-build/
+/build/
 bin/
 tmp/
 

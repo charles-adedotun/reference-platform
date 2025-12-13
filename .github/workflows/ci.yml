@@ -117,8 +117,8 @@ jobs:
       - name: Build Docker image (API)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.APP_DIR }}
-          file: ${{ env.APP_DIR }}/build/Dockerfile.api
+          context: apps/taskflow
+          file: apps/taskflow/build/Dockerfile.api
           push: false
           tags: |
             ghcr.io/${{ github.repository }}/api:${{ github.sha }}
