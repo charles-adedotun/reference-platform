@@ -1,0 +1,239 @@
+# Cert Manager Helm values
+# TLS certificate management for Kubernetes
+
+# Create namespace
+namespace: cert-manager
+
+# Install CRDs
+installCRDs: true
+
+# Global settings
+global:
+  # Leader election namespace
+  leaderElection:
+    namespace: cert-manager
+
+  # Log level
+  logLevel: 2
+
+  # Pod security policy
+  podSecurityPolicy:
+    enabled: false
+    useAppArmor: false
+
+# Replica count
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: quay.io/jetstack/cert-manager-controller
+  pullPolicy: IfNotPresent
+  tag: ""
+
+# Resources
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  automountServiceAccountToken: true
+
+# RBAC
+rbac:
+  create: true
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+# Volume mounts
+volumeMounts: []
+volumes: []
+
+# Webhook configuration
+webhook:
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 25m
+      memory: 64Mi
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+
+  # Service configuration
+  service:
+    type: ClusterIP
+
+  # Host networking
+  hostNetwork: false
+
+  # Service Account
+  serviceAccount:
+    create: true
+    annotations: {}
+    automountServiceAccountToken: true
+
+# CA Injector configuration
+cainjector:
+  enabled: true
+
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 25m
+      memory: 64Mi
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+
+  # Service Account
+  serviceAccount:
+    create: true
+    annotations: {}
+    automountServiceAccountToken: true
+
+# Startup API check
+startupAPICheck:
+  enabled: true
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 25m
+      memory: 64Mi
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+
+  # Service Account
+  serviceAccount:
+    create: true
+    annotations: {}
+    automountServiceAccountToken: true
+
+# Prometheus monitoring
+prometheus:
+  enabled: true
+
+  servicemonitor:
+    enabled: true
+    interval: 30s
+    labels:
+      release: kube-prometheus-stack
+
+# Feature gates
+featureGates: ""
+
+# Max concurrent challenges
+maxConcurrentChallenges: 60
+
+# Ingress shim configuration
+ingressShim:
+  defaultIssuerName: ""
+  defaultIssuerKind: ""
+  defaultIssuerGroup: ""
+
+# DNS configuration for ACME DNS-01 challenges
+dns01RecursiveNameservers: ""
+dns01RecursiveNameserversOnly: false
+
+# Enable certificate data source
+enableCertificateOwnerRef: true
+
+# Additional arguments
+extraArgs: []
+
+# Additional environment variables
+extraEnv: []
+
+# Network policy
+networkPolicy:
+  enabled: false
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Affinity
+affinity: {}
+
+# Node selector
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Tolerations
+tolerations: []
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}

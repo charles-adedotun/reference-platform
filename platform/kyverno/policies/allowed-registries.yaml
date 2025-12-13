@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: allowed-registries
+  annotations:
+    policies.kyverno.io/title: Allowed Image Registries
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Container images should only be pulled from approved registries to ensure
+      supply chain security. This policy validates that all images come from
+      ghcr.io, docker.io, gcr.io, or quay.io registries.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - kyverno
+                - local-path-storage
+      validate:
+        message: >-
+          Images must come from approved registries: ghcr.io, docker.io, gcr.io, or quay.io
+        foreach:
+          - list: "request.object.spec.containers"
+            pattern:
+              image: "ghcr.io/* | docker.io/* | gcr.io/* | quay.io/* | */ghcr.io/* | */docker.io/* | */gcr.io/* | */quay.io/*"

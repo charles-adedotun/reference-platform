@@ -1,0 +1,74 @@
+# Envoy Gateway Helm values
+# Configuration for Kind cluster deployment
+
+# Create namespace
+createNamespace: true
+
+# Deployment configuration
+deployment:
+  replicas: 1
+
+  envoyGateway:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# Config settings
+config:
+  envoyGateway:
+    gateway:
+      controllerName: gateway.envoyproxy.io/gatewayclass-controller
+
+    # Provider configuration
+    provider:
+      type: Kubernetes
+      kubernetes:
+        # Watch all namespaces
+        watch:
+          type: Namespaces
+          namespaces:
+            - default
+            - envoy-gateway-system
+
+    # Logging configuration
+    logging:
+      level:
+        default: info
+
+# Service configuration
+service:
+  type: ClusterIP
+  annotations: {}
+
+# RBAC
+rbac:
+  # Create RBAC resources
+  create: true
+
+# Service Account
+serviceAccount:
+  # Create service account
+  create: true
+  annotations: {}
+
+# Pod Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  seccompProfile:
+    type: RuntimeDefault

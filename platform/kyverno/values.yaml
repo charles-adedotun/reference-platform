@@ -1,0 +1,100 @@
+# Kyverno Helm values for Kind cluster
+# Minimal resource configuration for local development
+
+# Create namespace
+createNamespace: true
+
+# Admission controller settings
+admissionController:
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  # Container resources
+  container:
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# Background controller settings
+backgroundController:
+  enabled: true
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Cleanup controller settings
+cleanupController:
+  enabled: true
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+# Reports controller settings
+reportsController:
+  enabled: true
+  replicas: 1
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+# Features
+features:
+  # Enable policy reports
+  policyReports:
+    enabled: true
+
+  # Enable admission reports
+  admissionReports:
+    enabled: true
+
+  # Enable background scanning
+  backgroundScan:
+    enabled: true
+    interval: 1h
+
+# Config settings
+config:
+  # Resource filters
+  resourceFilters:
+    - '[Event,*,*]'
+    - '[*,kube-system,*]'
+    - '[*,kube-public,*]'
+    - '[*,kube-node-lease,*]'
+    - '[Node,*,*]'
+    - '[APIService,*,*]'
+    - '[TokenReview,*,*]'
+    - '[SubjectAccessReview,*,*]'
+    - '[SelfSubjectAccessReview,*,*]'
+    - '[Binding,*,*]'
+    - '[ReplicaSet,*,*]'
+    - '[AdmissionReport,*,*]'
+    - '[ClusterAdmissionReport,*,*]'
+    - '[BackgroundScanReport,*,*]'
+    - '[ClusterBackgroundScanReport,*,*]'
+
+# CRDs
+crds:
+  install: true

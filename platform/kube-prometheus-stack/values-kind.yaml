@@ -1,0 +1,122 @@
+# Minimal resources overlay for Kind clusters
+# This file patches the main values.yaml for local development
+
+# Prometheus Operator - reduced resources
+prometheusOperator:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+  prometheusConfigReloader:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+
+# Prometheus - minimal configuration
+prometheus:
+  prometheusSpec:
+    # Reduced retention
+    retention: 2d
+    retentionSize: "2GB"
+
+    # Smaller storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+    # Minimal resources
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    # Reduce replica count
+    replicas: 1
+
+# Alertmanager - minimal configuration
+alertmanager:
+  alertmanagerSpec:
+    # Smaller storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+
+    # Minimal resources
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+    # Single replica
+    replicas: 1
+
+# Grafana - minimal configuration
+grafana:
+  # Minimal resources
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+  # Smaller storage
+  persistence:
+    enabled: true
+    size: 1Gi
+
+  # Reduce replicas
+  replicas: 1
+
+# Node Exporter - minimal resources
+nodeExporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+# Kube State Metrics - minimal resources
+kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
+# Prometheus Node Exporter - minimal resources
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi

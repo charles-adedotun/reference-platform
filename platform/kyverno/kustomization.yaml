@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kyverno
+
+resources:
+  - policies/require-requests-limits.yaml
+  - policies/disallow-latest-tag.yaml
+  - policies/require-run-as-non-root.yaml
+  - policies/restrict-host-path.yaml
+  - policies/allowed-registries.yaml
+
+helmCharts:
+  - name: kyverno
+    repo: https://kyverno.github.io/kyverno/
+    version: 3.3.1
+    releaseName: kyverno
+    namespace: kyverno
+    valuesFile: values.yaml
