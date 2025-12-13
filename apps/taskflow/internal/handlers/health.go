@@ -35,9 +35,11 @@ type HealthResponse struct {
 func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(HealthResponse{
+	if err := json.NewEncoder(w).Encode(HealthResponse{
 		Status: "healthy",
-	})
+	}); err != nil {
+		h.logger.Error("Failed to encode health response", "error", err)
+	}
 }
 
 // Ready returns a readiness check (checks dependencies)
@@ -68,15 +70,19 @@ func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
 
 	if allHealthy {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(HealthResponse{
+		if err := json.NewEncoder(w).Encode(HealthResponse{
 			Status: "ready",
 			Checks: checks,
-		})
+		}); err != nil {
+			h.logger.Error("Failed to encode ready response", "error", err)
+		}
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(HealthResponse{
+		if err := json.NewEncoder(w).Encode(HealthResponse{
 			Status: "not ready",
 			Checks: checks,
-		})
+		}); err != nil {
+			h.logger.Error("Failed to encode not ready response", "error", err)
+		}
 	}
 }

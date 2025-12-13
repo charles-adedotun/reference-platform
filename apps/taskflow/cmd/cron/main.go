@@ -69,9 +69,9 @@ func main() {
 
 // CleanupJob handles periodic cleanup of old tasks
 type CleanupJob struct {
-	db       *database.DB
-	logger   *slog.Logger
-	interval time.Duration
+	db        *database.DB
+	logger    *slog.Logger
+	interval  time.Duration
 	retention time.Duration
 }
 
@@ -80,8 +80,8 @@ func NewCleanupJob(db *database.DB, logger *slog.Logger) *CleanupJob {
 	return &CleanupJob{
 		db:        db,
 		logger:    logger,
-		interval:  1 * time.Hour,          // Run every hour
-		retention: 7 * 24 * time.Hour,     // Keep tasks for 7 days
+		interval:  1 * time.Hour,      // Run every hour
+		retention: 7 * 24 * time.Hour, // Keep tasks for 7 days
 	}
 }
 

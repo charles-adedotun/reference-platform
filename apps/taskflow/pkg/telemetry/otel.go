@@ -54,7 +54,9 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
-		conn.Close()
+		if closeErr := conn.Close(); closeErr != nil {
+			logger.Error("Failed to close gRPC connection", "error", closeErr)
+		}
 		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
 	}
 

@@ -62,7 +62,11 @@ func main() {
 		logger.Error("Failed to connect to Redis", "error", err)
 		os.Exit(1)
 	}
-	defer q.Close()
+	defer func() {
+		if err := q.Close(); err != nil {
+			logger.Error("Failed to close queue connection", "error", err)
+		}
+	}()
 
 	// Create worker
 	worker := NewWorker(db, q, logger)
