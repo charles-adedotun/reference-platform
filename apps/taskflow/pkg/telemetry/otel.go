@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -14,8 +13,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // InitTracer initializes OpenTelemetry tracing with OTLP exporter
@@ -38,27 +35,17 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 		return func(ctx context.Context) error { return nil }, nil
 	}
 
-	// Create OTLP trace exporter
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, otelEndpoint,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
+	// Create OTLP trace exporter using the modern API
+	// The exporter manages its own gRPC connection internally
+	traceExporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint(otelEndpoint),
+		otlptracegrpc.WithInsecure(),
 	)
 	if err != nil {
-		logger.Warn("failed to connect to OTLP endpoint, using no-op tracer", "error", err)
+		logger.Warn("failed to create OTLP exporter, using no-op tracer", "error", err)
 		otel.SetTracerProvider(noop.NewTracerProvider())
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 		return func(ctx context.Context) error { return nil }, nil
-	}
-
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
-	if err != nil {
-		if closeErr := conn.Close(); closeErr != nil {
-			logger.Error("Failed to close gRPC connection", "error", closeErr)
-		}
-		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
 	}
 
 	// Create tracer provider
@@ -81,9 +68,6 @@ func InitTracer(ctx context.Context, serviceName, otelEndpoint string, logger *s
 		logger.Info("Shutting down tracer provider")
 		if err := tp.Shutdown(ctx); err != nil {
 			return fmt.Errorf("failed to shutdown tracer provider: %w", err)
-		}
-		if err := conn.Close(); err != nil {
-			return fmt.Errorf("failed to close gRPC connection: %w", err)
 		}
 		return nil
 	}
