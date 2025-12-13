@@ -38,7 +38,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${'$'}{{ github.workflow }}-${'$'}{{ github.ref }}-${'$'}{{ inputs.environment || 'all' }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.environment || 'all' }}
   cancel-in-progress: false
 
 env:
@@ -47,13 +47,13 @@ env:
 
 jobs:
   terraform:
-    name: Terraform ${'$'}{{ matrix.environment }}
+    name: Terraform ${{ matrix.environment }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        environment: ${'$'}{{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev", "staging", "prod"]') }}
-    environment: ${'$'}{{ matrix.environment }}
+        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev", "staging", "prod"]') }}
+    environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,8 +61,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${'$'}{{ secrets[format('GCP_WORKLOAD_IDENTITY_PROVIDER_{0}', upper(matrix.environment))] }}
-          service_account: ${'$'}{{ secrets[format('GCP_SERVICE_ACCOUNT_{0}', upper(matrix.environment))] }}
+          workload_identity_provider: ${{ secrets[format('GCP_WORKLOAD_IDENTITY_PROVIDER_{0}', upper(matrix.environment))] }}
+          service_account: ${{ secrets[format('GCP_SERVICE_ACCOUNT_{0}', upper(matrix.environment))] }}
           token_format: 'access_token'
 
       - name: Set up Cloud SDK
@@ -73,7 +73,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${'$'}{{ env.TF_VERSION }}
+          terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Format Check
         id: fmt
@@ -86,8 +86,8 @@ jobs:
         working-directory: terraform/gcp
         run: |
           terraform init \
-            -backend-config="bucket=${'$'}{{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
-            -backend-config="prefix=terraform/${'$'}{{ matrix.environment }}"
+            -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
+            -backend-config="prefix=terraform/${{ matrix.environment }}"
 
       - name: Terraform Validate
         id: validate
@@ -98,36 +98,36 @@ jobs:
         id: plan
         working-directory: terraform/gcp
         env:
-          TF_VAR_environment: ${'$'}{{ matrix.environment }}
-          TF_VAR_project_id: ${'$'}{{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_environment: ${{ matrix.environment }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
         run: |
           terraform plan -no-color -out=tfplan \
-            -var-file="environments/${'$'}{{ matrix.environment }}.tfvars"
+            -var-file="environments/${{ matrix.environment }}.tfvars"
         continue-on-error: true
 
       - name: Create Plan Summary
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         env:
-          PLAN_OUTPUT: ${'$'}{{ steps.plan.outputs.stdout }}
-          ENVIRONMENT: ${'$'}{{ matrix.environment }}
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
+          ENVIRONMENT: ${{ matrix.environment }}
         with:
           script: |
-            const output = `#### Terraform Plan for \`${'$'}{process.env.ENVIRONMENT}\` (GCP)
-            #### Terraform Format and Style: \`${'$'}{{ steps.fmt.outcome }}\`
-            #### Terraform Initialization: \`${'$'}{{ steps.init.outcome }}\`
-            #### Terraform Validation: \`${'$'}{{ steps.validate.outcome }}\`
-            #### Terraform Plan: \`${'$'}{{ steps.plan.outcome }}\`
+            const output = `#### Terraform Plan for \`${process.env.ENVIRONMENT}\` (GCP)
+            #### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization: \`${{ steps.init.outcome }}\`
+            #### Terraform Validation: \`${{ steps.validate.outcome }}\`
+            #### Terraform Plan: \`${{ steps.plan.outcome }}\`
 
             <details><summary>Show Plan</summary>
 
             \`\`\`terraform
-            ${'$'}{process.env.PLAN_OUTPUT}
+            ${process.env.PLAN_OUTPUT}
             \`\`\`
 
             </details>
 
-            *Pusher: @${'$'}{{ github.actor }}, Action: \`${'$'}{{ github.event_name }}\`*`;
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -146,25 +146,25 @@ jobs:
           (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
         working-directory: terraform/gcp
         env:
-          TF_VAR_environment: ${'$'}{{ matrix.environment }}
-          TF_VAR_project_id: ${'$'}{{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_environment: ${{ matrix.environment }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
         if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
         working-directory: terraform/gcp
         env:
-          TF_VAR_environment: ${'$'}{{ matrix.environment }}
-          TF_VAR_project_id: ${'$'}{{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_environment: ${{ matrix.environment }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
         run: |
           terraform destroy -auto-approve \
-            -var-file="environments/${'$'}{{ matrix.environment }}.tfvars"
+            -var-file="environments/${{ matrix.environment }}.tfvars"
 
       - name: Upload Terraform Plan
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-gcp-${'$'}{{ matrix.environment }}
+          name: tfplan-gcp-${{ matrix.environment }}
           path: terraform/gcp/tfplan
           retention-days: 5
 

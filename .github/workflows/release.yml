@@ -18,12 +18,12 @@ permissions:
   attestations: write
 
 concurrency:
-  group: ${'$'}{{ github.workflow }}-${'$'}{{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${'$'}{{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}
   GO_VERSION: '1.23'
 
 jobs:
@@ -31,8 +31,8 @@ jobs:
     name: Build and Push Container Images
     runs-on: ubuntu-latest
     outputs:
-      image-digest: ${'$'}{{ steps.build.outputs.digest }}
-      image-tags: ${'$'}{{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,15 +48,15 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${'$'}{{ env.REGISTRY }}
-          username: ${'$'}{{ github.actor }}
-          password: ${'$'}{{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -71,8 +71,8 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${'$'}{{ steps.meta.outputs.tags }}
-          labels: ${'$'}{{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           sbom: true
@@ -81,8 +81,8 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}
-          subject-digest: ${'$'}{{ steps.build.outputs.digest }}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
   generate-sbom:
@@ -96,19 +96,19 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${'$'}{{ env.REGISTRY }}
-          username: ${'$'}{{ github.actor }}
-          password: ${'$'}{{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Syft
         uses: anchore/sbom-action/download-syft@v0.17.10
 
       - name: Generate SBOM
         env:
-          IMAGE_REF: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}@${'$'}{{ needs.build-and-push.outputs.image-digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image-digest }}
         run: |
-          syft "${'$'}IMAGE_REF" -o spdx-json=sbom.spdx.json
-          syft "${'$'}IMAGE_REF" -o cyclonedx-json=sbom.cyclonedx.json
+          syft "$IMAGE_REF" -o spdx-json=sbom.spdx.json
+          syft "$IMAGE_REF" -o cyclonedx-json=sbom.cyclonedx.json
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v4
@@ -134,15 +134,15 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${'$'}{{ env.REGISTRY }}
-          username: ${'$'}{{ github.actor }}
-          password: ${'$'}{{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign container image
         env:
-          IMAGE_REF: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}@${'$'}{{ needs.build-and-push.outputs.image-digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image-digest }}
         run: |
-          cosign sign --yes "${'$'}IMAGE_REF"
+          cosign sign --yes "$IMAGE_REF"
 
   scan-image:
     name: Scan Released Image
@@ -158,9 +158,9 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         env:
-          IMAGE_REF: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}@${'$'}{{ needs.build-and-push.outputs.image-digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image-digest }}
         with:
-          image-ref: ${'$'}{{ env.IMAGE_REF }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -185,7 +185,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${'$'}{{ env.GO_VERSION }}
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Download SBOM artifacts
         uses: actions/download-artifact@v4
@@ -221,13 +221,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         env:
-          TAG_NAME: ${'$'}{{ github.ref_name }}
+          TAG_NAME: ${{ github.ref_name }}
         with:
-          tag_name: ${'$'}{{ env.TAG_NAME }}
-          name: Release ${'$'}{{ env.TAG_NAME }}
+          tag_name: ${{ env.TAG_NAME }}
+          name: Release ${{ env.TAG_NAME }}
           body_path: release-notes.md
           draft: false
-          prerelease: ${'$'}{{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
           files: |
             dist/*
             sbom/*
@@ -247,37 +247,37 @@ jobs:
 
       - name: Update Helm chart version
         env:
-          VERSION: ${'$'}{{ github.ref_name }}
+          VERSION: ${{ github.ref_name }}
         run: |
           if [ -d "charts" ]; then
             # Remove 'v' prefix from version
-            VERSION_NUM=${'$'}{VERSION#v}
+            VERSION_NUM=${VERSION#v}
             # Update Chart.yaml
-            sed -i "s/^version:.*/version: ${'$'}VERSION_NUM/" charts/*/Chart.yaml
-            sed -i "s/^appVersion:.*/appVersion: ${'$'}VERSION/" charts/*/Chart.yaml
+            sed -i "s/^version:.*/version: $VERSION_NUM/" charts/*/Chart.yaml
+            sed -i "s/^appVersion:.*/appVersion: $VERSION/" charts/*/Chart.yaml
           fi
 
       - name: Update Kubernetes manifests
         env:
-          VERSION: ${'$'}{{ github.ref_name }}
-          IMAGE_DIGEST: ${'$'}{{ needs.build-and-push.outputs.image-digest }}
+          VERSION: ${{ github.ref_name }}
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.image-digest }}
         run: |
           if [ -d "k8s" ]; then
             # Update image references in manifests
             find k8s -name "*.yaml" -type f -exec sed -i \
-              "s|image:.*${'$'}{{ env.IMAGE_NAME }}.*|image: ${'$'}{{ env.REGISTRY }}/${'$'}{{ env.IMAGE_NAME }}@${'$'}IMAGE_DIGEST|g" {} \;
+              "s|image:.*${{ env.IMAGE_NAME }}.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@$IMAGE_DIGEST|g" {} \;
           fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore: update deployment to ${'$'}{{ github.ref_name }}"
-          title: "chore: update deployment to ${'$'}{{ github.ref_name }}"
+          commit-message: "chore: update deployment to ${{ github.ref_name }}"
+          title: "chore: update deployment to ${{ github.ref_name }}"
           body: |
-            Automated update of deployment manifests for release ${'$'}{{ github.ref_name }}
+            Automated update of deployment manifests for release ${{ github.ref_name }}
 
             - Updated Helm charts
             - Updated Kubernetes manifests
-            - Image digest: ${'$'}{{ needs.build-and-push.outputs.image-digest }}
-          branch: update-deployment-${'$'}{{ github.ref_name }}
+            - Image digest: ${{ needs.build-and-push.outputs.image-digest }}
+          branch: update-deployment-${{ github.ref_name }}
           delete-branch: true

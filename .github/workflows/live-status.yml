@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${'$'}{{ github.workflow }}
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -21,12 +21,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${'$'}{{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check endpoints
         id: check
         env:
-          HEALTH_CHECK_URL: ${'$'}{{ secrets.HEALTH_CHECK_URL || 'https://example.com/health' }}
+          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL || 'https://example.com/health' }}
         run: |
           # Initialize variables
           timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
@@ -34,18 +34,18 @@ jobs:
 
           # Function to check endpoint
           check_endpoint() {
-            local url=${'$'}1
-            local name=${'$'}2
-            local response_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${'$'}url" || echo "000")
-            local response_time=$(curl -s -o /dev/null -w "%{time_total}" --max-time 10 "${'$'}url" || echo "timeout")
+            local url=$1
+            local name=$2
+            local response_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            local response_time=$(curl -s -o /dev/null -w "%{time_total}" --max-time 10 "$url" || echo "timeout")
             
-            if [ "${'$'}response_code" = "200" ] || [ "${'$'}response_code" = "204" ]; then
-              echo "${'$'}name|✅ Operational|HTTP ${'$'}response_code|${'$'}{response_time}s"
-            elif [ "${'$'}response_code" = "000" ]; then
-              echo "${'$'}name|❌ Down|Connection failed|N/A"
+            if [ "$response_code" = "200" ] || [ "$response_code" = "204" ]; then
+              echo "$name|✅ Operational|HTTP $response_code|${response_time}s"
+            elif [ "$response_code" = "000" ]; then
+              echo "$name|❌ Down|Connection failed|N/A"
               all_healthy=false
             else
-              echo "${'$'}name|⚠️ Degraded|HTTP ${'$'}response_code|${'$'}{response_time}s"
+              echo "$name|⚠️ Degraded|HTTP $response_code|${response_time}s"
               all_healthy=false
             fi
           }
@@ -53,22 +53,22 @@ jobs:
           # Create results file
           echo "# Live Service Status" > status_report.txt
           echo "" >> status_report.txt
-          echo "Last updated: **${'$'}timestamp**" >> status_report.txt
+          echo "Last updated: **$timestamp**" >> status_report.txt
           echo "" >> status_report.txt
           echo "| Service | Status | Details | Response Time |" >> status_report.txt
           echo "|---------|--------|---------|---------------|" >> status_report.txt
 
           # Check main health endpoint
-          check_endpoint "${'$'}HEALTH_CHECK_URL" "Main API" >> status_report.txt
+          check_endpoint "$HEALTH_CHECK_URL" "Main API" >> status_report.txt
 
           # Check additional endpoints if configured
-          if [ -n "${'$'}{{ secrets.ADDITIONAL_ENDPOINTS }}" ]; then
+          if [ -n "${{ secrets.ADDITIONAL_ENDPOINTS }}" ]; then
             # Parse comma-separated endpoints
-            IFS=',' read -ra ENDPOINTS <<< "${'$'}{{ secrets.ADDITIONAL_ENDPOINTS }}"
-            for endpoint in "${'$'}{ENDPOINTS[@]}"; do
+            IFS=',' read -ra ENDPOINTS <<< "${{ secrets.ADDITIONAL_ENDPOINTS }}"
+            for endpoint in "${ENDPOINTS[@]}"; do
               # Split on pipe: name|url
-              IFS='|' read -r name url <<< "${'$'}endpoint"
-              check_endpoint "${'$'}url" "${'$'}name" >> status_report.txt
+              IFS='|' read -r name url <<< "$endpoint"
+              check_endpoint "$url" "$name" >> status_report.txt
             done
           fi
 
@@ -76,7 +76,7 @@ jobs:
           echo "---" >> status_report.txt
           echo "" >> status_report.txt
           
-          if [ "${'$'}all_healthy" = true ]; then
+          if [ "$all_healthy" = true ]; then
             echo "**Overall Status:** ✅ All Systems Operational" >> status_report.txt
           else
             echo "**Overall Status:** ⚠️ Some Services Degraded or Down" >> status_report.txt
@@ -86,7 +86,7 @@ jobs:
           echo "*This status page is automatically updated every 6 hours by GitHub Actions.*" >> status_report.txt
 
           # Set output for next step
-          echo "all_healthy=${'$'}all_healthy" >> ${'$'}GITHUB_OUTPUT
+          echo "all_healthy=$all_healthy" >> $GITHUB_OUTPUT
 
       - name: Update LIVE_STATUS.md
         run: |
@@ -94,7 +94,7 @@ jobs:
 
       - name: Commit and push changes
         env:
-          ACTOR: ${'$'}{{ github.actor }}
+          ACTOR: ${{ github.actor }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -150,9 +150,9 @@ jobs:
     steps:
       - name: Send Slack notification
         env:
-          SLACK_WEBHOOK_URL: ${'$'}{{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST "${'$'}SLACK_WEBHOOK_URL" \
+          curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d '{
               "text": "⚠️ Live Status Check Failed",
@@ -169,11 +169,11 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Workflow:*\n${'$'}{{ github.workflow }}"
+                      "text": "*Workflow:*\n${{ github.workflow }}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Repository:*\n${'$'}{{ github.repository }}"
+                      "text": "*Repository:*\n${{ github.repository }}"
                     }
                   ]
                 },
@@ -186,7 +186,7 @@ jobs:
                         "type": "plain_text",
                         "text": "View Workflow Run"
                       },
-                      "url": "${'$'}{{ github.server_url }}/${'$'}{{ github.repository }}/actions/runs/${'$'}{{ github.run_id }}"
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                     }
                   ]
                 }
