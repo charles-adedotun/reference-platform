@@ -281,7 +281,8 @@ postgresql:
     capabilities:
       drop:
         - ALL
-    readOnlyRootFilesystem: true
+    # Note: PostgreSQL requires writable filesystem for initialization
+    readOnlyRootFilesystem: false
     runAsNonRoot: true
     runAsUser: 999
 

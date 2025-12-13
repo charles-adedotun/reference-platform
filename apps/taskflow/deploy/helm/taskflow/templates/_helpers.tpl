@@ -180,35 +180,48 @@ Migration image
 {{- end }}
 
 {{/*
-PostgreSQL connection URL
+PostgreSQL host
 */}}
-{{- define "taskflow.postgresql.url" -}}
-{{- if .Values.postgresql.enabled }}
-{{- printf "postgresql://%s:%s@%s-postgresql:%d/%s" .Values.postgresql.auth.username .Values.postgresql.auth.password (include "taskflow.fullname" .) (.Values.postgresql.service.port | int) .Values.postgresql.auth.database }}
-{{- end }}
+{{- define "taskflow.postgresql.host" -}}
+{{- printf "%s-postgresql" (include "taskflow.fullname" .) }}
 {{- end }}
 
 {{/*
-Redis connection URL
+Redis host
 */}}
-{{- define "taskflow.redis.url" -}}
-{{- if .Values.redis.enabled }}
-{{- if .Values.redis.auth.enabled }}
-{{- printf "redis://:%s@%s-redis:%d/0" .Values.redis.auth.password (include "taskflow.fullname" .) (.Values.redis.service.port | int) }}
-{{- else }}
-{{- printf "redis://%s-redis:%d/0" (include "taskflow.fullname" .) (.Values.redis.service.port | int) }}
-{{- end }}
-{{- end }}
+{{- define "taskflow.redis.host" -}}
+{{- printf "%s-redis" (include "taskflow.fullname" .) }}
 {{- end }}
 
 {{/*
 Common environment variables
+Note: Passwords are injected from secrets, not embedded in URLs
 */}}
 {{- define "taskflow.commonEnv" -}}
-- name: DATABASE_URL
-  value: {{ include "taskflow.postgresql.url" . | quote }}
-- name: REDIS_URL
-  value: {{ include "taskflow.redis.url" . | quote }}
+# Database configuration (password from secret, not in URL)
+- name: DB_HOST
+  value: {{ include "taskflow.postgresql.host" . | quote }}
+- name: DB_PORT
+  value: {{ .Values.postgresql.service.port | quote }}
+- name: DB_NAME
+  value: {{ .Values.postgresql.auth.database | quote }}
+- name: DB_USER
+  value: {{ .Values.postgresql.auth.username | quote }}
+- name: DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "taskflow.fullname" . }}-postgresql
+      key: password
+# Redis configuration (password from secret, not in URL)
+- name: REDIS_ADDR
+  value: {{ printf "%s:%d" (include "taskflow.redis.host" .) (.Values.redis.service.port | int) | quote }}
+{{- if .Values.redis.auth.enabled }}
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "taskflow.fullname" . }}-redis
+      key: password
+{{- end }}
 - name: LOG_LEVEL
   value: {{ .Values.config.logLevel | quote }}
 - name: ENVIRONMENT
