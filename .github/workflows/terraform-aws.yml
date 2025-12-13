@@ -1,0 +1,211 @@
+name: Terraform AWS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/aws/**'
+      - '.github/workflows/terraform-aws.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/aws/**'
+      - '.github/workflows/terraform-aws.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      action:
+        description: 'Terraform action'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${'$'}{{ github.workflow }}-${'$'}{{ github.ref }}-${'$'}{{ inputs.environment || 'all' }}
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: '1.9'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  terraform:
+    name: Terraform ${'$'}{{ matrix.environment }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${'$'}{{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev", "staging", "prod"]') }}
+    environment: ${'$'}{{ matrix.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${'$'}{{ secrets[format('AWS_ROLE_ARN_{0}', upper(matrix.environment))] }}
+          aws-region: ${'$'}{{ env.AWS_REGION }}
+          role-session-name: github-actions-terraform
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${'$'}{{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        working-directory: terraform/aws
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        working-directory: terraform/aws
+        run: |
+          terraform init \
+            -backend-config="bucket=${'$'}{{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
+            -backend-config="key=terraform/${'$'}{{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${'$'}{{ env.AWS_REGION }}"
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: terraform/aws
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform/aws
+        env:
+          TF_VAR_environment: ${'$'}{{ matrix.environment }}
+        run: |
+          terraform plan -no-color -out=tfplan \
+            -var-file="environments/${'$'}{{ matrix.environment }}.tfvars"
+        continue-on-error: true
+
+      - name: Create Plan Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PLAN_OUTPUT: ${'$'}{{ steps.plan.outputs.stdout }}
+          ENVIRONMENT: ${'$'}{{ matrix.environment }}
+        with:
+          script: |
+            const output = `#### Terraform Plan for \`${'$'}{process.env.ENVIRONMENT}\`
+            #### Terraform Format and Style: \`${'$'}{{ steps.fmt.outcome }}\`
+            #### Terraform Initialization: \`${'$'}{{ steps.init.outcome }}\`
+            #### Terraform Validation: \`${'$'}{{ steps.validate.outcome }}\`
+            #### Terraform Plan: \`${'$'}{{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${'$'}{process.env.PLAN_OUTPUT}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${'$'}{{ github.actor }}, Action: \`${'$'}{{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
+        working-directory: terraform/aws
+        env:
+          TF_VAR_environment: ${'$'}{{ matrix.environment }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+        working-directory: terraform/aws
+        env:
+          TF_VAR_environment: ${'$'}{{ matrix.environment }}
+        run: |
+          terraform destroy -auto-approve \
+            -var-file="environments/${'$'}{{ matrix.environment }}.tfvars"
+
+      - name: Upload Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${'$'}{{ matrix.environment }}
+          path: terraform/aws/tfplan
+          retention-days: 5
+
+  tfsec:
+    name: TFSec Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform/aws
+          format: sarif
+          soft_fail: true
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: tfsec-aws
+
+  checkov:
+    name: Checkov Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/aws
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov-aws
