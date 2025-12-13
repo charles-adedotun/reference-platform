@@ -48,6 +48,7 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        continue-on-error: true  # May fail without GitHub Advanced Security
         with:
           category: "/language:${{ matrix.language }}"
           upload: true
@@ -75,6 +76,7 @@ jobs:
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true  # May fail without GitHub Advanced Security
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy-repo'
@@ -102,6 +104,7 @@ jobs:
       - name: Upload Trivy config results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true  # May fail without GitHub Advanced Security
         with:
           sarif_file: 'trivy-config-results.sarif'
           category: 'trivy-config'
@@ -123,7 +126,8 @@ jobs:
       - name: Build Docker image for scanning
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: apps/taskflow
+          file: apps/taskflow/build/Dockerfile.api
           load: true
           tags: local-image:scan
           cache-from: type=gha
@@ -141,6 +145,7 @@ jobs:
       - name: Upload Trivy image results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true  # May fail without GitHub Advanced Security
         with:
           sarif_file: 'trivy-image-results.sarif'
           category: 'trivy-container'
@@ -150,24 +155,29 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION="8.18.4"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz
+          chmod +x gitleaks
+
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_SUMMARY: true
+        run: ./gitleaks detect --source . --verbose
 
   govulncheck:
     name: Go Vulnerability Check
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: apps/taskflow
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -177,6 +187,7 @@ jobs:
         with:
           go-version: '1.23'
           cache: true
+          cache-dependency-path: apps/taskflow/go.sum
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -188,6 +199,8 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    # This job requires GitHub Advanced Security. It will be skipped on repos without it.
+    continue-on-error: true
     permissions:
       contents: read
       pull-requests: write

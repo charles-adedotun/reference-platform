@@ -18,11 +18,15 @@ concurrency:
 
 env:
   GO_VERSION: '1.23'
+  APP_DIR: 'apps/taskflow'
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,12 +36,14 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: ${{ env.APP_DIR }}/go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           args: --timeout=5m
+          working-directory: ${{ env.APP_DIR }}
 
       - name: Run go fmt
         run: |
@@ -53,6 +59,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,6 +71,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: ${{ env.APP_DIR }}/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -72,7 +82,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.out
+          files: ${{ env.APP_DIR }}/coverage.out
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -81,6 +91,9 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [lint, test]
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,31 +103,35 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: ${{ env.APP_DIR }}/go.sum
 
       - name: Build binaries
         run: |
-          go build -v -o bin/app ./cmd/...
+          go build -v -o bin/api ./cmd/api
+          go build -v -o bin/worker ./cmd/worker
+          go build -v -o bin/cron ./cmd/cron
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build Docker image (API)
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ env.APP_DIR }}
+          file: ${{ env.APP_DIR }}/build/Dockerfile.api
           push: false
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}/api:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/image.tar
+          outputs: type=docker,dest=/tmp/api-image.tar
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image
-          path: /tmp/image.tar
+          name: docker-image-api
+          path: /tmp/api-image.tar
           retention-days: 1
 
   helm-lint:
