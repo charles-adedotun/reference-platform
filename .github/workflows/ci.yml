@@ -128,7 +128,7 @@ jobs:
           outputs: type=docker,dest=/tmp/api-image.tar
 
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docker-image-api
           path: /tmp/api-image.tar
