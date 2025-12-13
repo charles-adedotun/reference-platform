@@ -2,9 +2,9 @@
 
 A production-style, end-to-end Kubernetes reference platform for DevOps/SRE evaluation.
 
-[![CI](https://github.com/your-org/reference-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/reference-platform/actions/workflows/ci.yml)
-[![Security](https://github.com/your-org/reference-platform/actions/workflows/security.yml/badge.svg)](https://github.com/your-org/reference-platform/actions/workflows/security.yml)
-[![Live Status](https://github.com/your-org/reference-platform/actions/workflows/live-status.yml/badge.svg)](https://github.com/your-org/reference-platform/actions/workflows/live-status.yml)
+[![CI](https://github.com/charles-adedotun/reference-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/ci.yml)
+[![Security](https://github.com/charles-adedotun/reference-platform/actions/workflows/security.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/security.yml)
+[![Live Status](https://github.com/charles-adedotun/reference-platform/actions/workflows/live-status.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/live-status.yml)
 
 ## Quick Evaluation (3-5 minutes)
 
