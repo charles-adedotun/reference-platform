@@ -1,0 +1,4 @@
+golang 1.23.0
+terraform 1.10.0
+helm 3.16.0
+kind 0.24.0
