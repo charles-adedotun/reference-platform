@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.4
 
 require (
-	github.com/go-chi/chi/v5 v5.0.11
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/httprate v0.14.1
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/redis/go-redis/v9 v9.6.3
