@@ -102,7 +102,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@v0.20.11
+        uses: anchore/sbom-action/download-syft@v0.21.0
 
       - name: Generate SBOM
         env:
