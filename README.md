@@ -4,7 +4,6 @@ A production-style, end-to-end Kubernetes reference platform for DevOps/SRE eval
 
 [![CI](https://github.com/charles-adedotun/reference-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/charles-adedotun/reference-platform/actions/workflows/security.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/security.yml)
-[![Live Status](https://github.com/charles-adedotun/reference-platform/actions/workflows/live-status.yml/badge.svg)](https://github.com/charles-adedotun/reference-platform/actions/workflows/live-status.yml)
 
 ## Quick Evaluation (3-5 minutes)
 
@@ -192,15 +191,6 @@ make fix-db        # Recover from failure
 make tf-plan       # terraform plan (AWS dev)
 make tf-apply      # terraform apply (requires confirmation)
 ```
-
-## Live Status
-
-See [LIVE_STATUS.md](LIVE_STATUS.md) for automated health check results.
-
-The status is updated every 6 hours by GitHub Actions and includes:
-- Endpoint health checks (/health, /api/v1/transaction)
-- Response latencies
-- Currently deployed commit SHA
 
 ## Documentation
 

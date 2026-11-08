@@ -3,7 +3,7 @@ kind: Kustomization
 
 helmCharts:
   - name: taskflow
-    repo: oci://ghcr.io/yourusername/charts
+    repo: oci://ghcr.io/charles-adedotun/charts
     version: 0.1.0
     releaseName: taskflow
     namespace: taskflow

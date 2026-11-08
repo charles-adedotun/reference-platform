@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/yourusername/reference-platform.git
+    repoURL: https://github.com/charles-adedotun/reference-platform.git
     targetRevision: main
     path: gitops/root
   destination:

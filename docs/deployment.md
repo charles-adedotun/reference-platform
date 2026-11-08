@@ -173,7 +173,7 @@ kubectl apply -f gitops/argocd/apps/
 
 # Or using argocd CLI
 argocd app create reference-platform \
-  --repo https://github.com/your-org/reference-platform \
+  --repo https://github.com/charles-adedotun/reference-platform \
   --path gitops/staging \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace staging \

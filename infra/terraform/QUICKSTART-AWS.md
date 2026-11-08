@@ -62,7 +62,7 @@ aws_region   = "us-east-1"  # or your preferred region
 
 # Update GitHub repositories
 github_repositories = [
-  "repo:your-org/your-repo:ref:refs/heads/main"
+  "repo:charles-adedotun/reference-platform:ref:refs/heads/main"
 ]
 
 # If using ECR, update ARNs

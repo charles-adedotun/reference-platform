@@ -55,7 +55,7 @@ cd ../../environments/gcp/dev
 # Create terraform.tfvars
 cat > terraform.tfvars << EOF
 project_id        = "your-gcp-project-id"
-github_repository = "your-org/your-repo"
+github_repository = "charles-adedotun/reference-platform"
 EOF
 
 # Update backend.tf with your bucket name

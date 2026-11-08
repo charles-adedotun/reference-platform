@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.27.3'
   APP_DIR: 'apps/taskflow'
 
 jobs:
@@ -146,28 +146,26 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Lint Helm charts
+      - name: Lint Helm chart
         run: |
-          if [ -d "charts" ]; then
-            for chart in charts/*/; do
-              echo "Linting $chart"
-              helm lint "$chart" --strict
-              helm template test "$chart" > /dev/null
-            done
-          else
-            echo "No Helm charts found, skipping"
-          fi
+          CHART_DIR="apps/taskflow/deploy/helm/taskflow"
+          echo "Linting $CHART_DIR"
+          helm lint "$CHART_DIR" --strict \
+            --set postgresql.auth.password=testpass \
+            --set redis.auth.password=testpass
+          helm template test "$CHART_DIR" \
+            --set postgresql.auth.password=testpass \
+            --set redis.auth.password=testpass > /dev/null
 
       - name: Run kubeconform
         run: |
-          if [ -d "charts" ]; then
-            KUBECONFORM_VERSION="v0.6.4"
-            KUBECONFORM_SHA256="2b4ebeaa4d5ac4843cf8f7b7e66a8874252b6b71bc7cbfc4ef1cbf85acec7c07"
-            curl -sSL -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
-            echo "${KUBECONFORM_SHA256}  kubeconform.tar.gz" | sha256sum -c -
-            tar xzf kubeconform.tar.gz
-            for chart in charts/*/; do
-              echo "Validating $chart with kubeconform"
-              helm template test "$chart" | ./kubeconform -strict -summary
-            done
-          fi
+          CHART_DIR="apps/taskflow/deploy/helm/taskflow"
+          KUBECONFORM_VERSION="v0.6.4"
+          KUBECONFORM_SHA256="2b4ebeaa4d5ac4843cf8f7b7e66a8874252b6b71bc7cbfc4ef1cbf85acec7c07"
+          curl -sSL -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  kubeconform.tar.gz" | sha256sum -c -
+          tar xzf kubeconform.tar.gz
+          echo "Validating $CHART_DIR with kubeconform"
+          helm template test "$CHART_DIR" \
+            --set postgresql.auth.password=testpass \
+            --set redis.auth.password=testpass | ./kubeconform -strict -summary

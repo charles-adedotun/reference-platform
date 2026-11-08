@@ -7,7 +7,7 @@
 CLUSTER_NAME ?= reference-platform
 ARGOCD_NAMESPACE ?= argocd
 ARGOCD_VERSION ?= 7.7.5
-APP_NAMESPACE ?= default
+APP_NAMESPACE ?= taskflow
 KUBECONFIG ?= $(HOME)/.kube/config
 TIMEOUT ?= 300s
 
@@ -111,8 +111,8 @@ build: ## Build Go application
 sbom: ## Generate Software Bill of Materials
 	@echo "$(GREEN)Generating SBOM$(NC)"
 	@if command -v syft > /dev/null; then \
-		syft api/bin/api -o json > sbom.json; \
-		syft api/bin/api -o spdx > sbom.spdx; \
+		syft apps/taskflow/bin/api -o json > sbom.json; \
+		syft apps/taskflow/bin/api -o spdx > sbom.spdx; \
 		echo "$(GREEN)SBOM generated: sbom.json, sbom.spdx$(NC)"; \
 	else \
 		echo "$(RED)syft not found. Install from https://github.com/anchore/syft$(NC)"; \
@@ -122,7 +122,7 @@ sbom: ## Generate Software Bill of Materials
 scan: ## Scan for vulnerabilities
 	@echo "$(GREEN)Scanning for vulnerabilities$(NC)"
 	@if command -v grype > /dev/null; then \
-		grype api/bin/api; \
+		grype apps/taskflow/bin/api; \
 	else \
 		echo "$(RED)grype not found. Install from https://github.com/anchore/grype$(NC)"; \
 		exit 1; \
@@ -152,17 +152,17 @@ fix-db: ## Restart postgres pod
 
 tf-plan: ## Run Terraform plan
 	@echo "$(GREEN)Running terraform plan$(NC)"
-	cd terraform && terraform init && terraform plan
+	cd infra/terraform/environments/aws/dev && terraform init -backend=false && terraform plan
 	@echo "$(GREEN)Terraform plan complete$(NC)"
 
 tf-apply: ## Run Terraform apply
 	@echo "$(GREEN)Running terraform apply$(NC)"
-	cd terraform && terraform init && terraform apply -auto-approve
+	cd infra/terraform/environments/aws/dev && terraform init && terraform apply -auto-approve
 	@echo "$(GREEN)Terraform apply complete$(NC)"
 
 clean: ## Clean build artifacts
 	@echo "$(YELLOW)Cleaning build artifacts$(NC)"
-	rm -rf api/bin
-	rm -f api/coverage.out
+	rm -rf apps/taskflow/bin
+	rm -f apps/taskflow/coverage.out
 	rm -f sbom.json sbom.spdx
 	@echo "$(GREEN)Clean complete$(NC)"

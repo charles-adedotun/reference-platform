@@ -216,7 +216,7 @@ public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
 
 # GitHub Actions OIDC
 github_repositories = [
-  "repo:your-org/your-repo:ref:refs/heads/main"
+  "repo:charles-adedotun/reference-platform:ref:refs/heads/main"
 ]
 ```
 

@@ -126,7 +126,7 @@ project_id = "your-gcp-project-id"
 region     = "us-central1"
 
 # GitHub Actions
-github_repository = "your-org/your-repo"
+github_repository = "charles-adedotun/reference-platform"
 
 # Network (adjust per environment)
 subnet_cidr    = "10.0.0.0/24"
