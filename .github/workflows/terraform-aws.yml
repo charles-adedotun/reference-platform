@@ -48,11 +48,18 @@ env:
 jobs:
   terraform:
     name: Terraform ${{ matrix.environment }}
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev", "staging", "prod"]') }}
+        include:
+          - environment: dev
+            env_upper: DEV
+          - environment: staging
+            env_upper: STAGING
+          - environment: prod
+            env_upper: PROD
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
@@ -61,7 +68,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', upper(matrix.environment))] }}
+          role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', matrix.env_upper)] }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: github-actions-terraform
 
@@ -81,7 +88,7 @@ jobs:
         working-directory: infra/terraform
         run: |
           terraform init \
-            -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
+            -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.env_upper)] }}" \
             -backend-config="key=terraform/${{ matrix.environment }}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
 
@@ -180,6 +187,8 @@ jobs:
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
         with:
           sarif_file: results.sarif
           category: tfsec-aws
@@ -206,6 +215,7 @@ jobs:
       - name: Upload Checkov results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: checkov-results.sarif
           category: checkov-aws

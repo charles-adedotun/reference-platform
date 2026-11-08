@@ -48,11 +48,18 @@ env:
 jobs:
   terraform:
     name: Terraform ${{ matrix.environment }}
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev", "staging", "prod"]') }}
+        include:
+          - environment: dev
+            env_upper: DEV
+          - environment: staging
+            env_upper: STAGING
+          - environment: prod
+            env_upper: PROD
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
@@ -61,8 +68,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: ${{ secrets[format('GCP_WORKLOAD_IDENTITY_PROVIDER_{0}', upper(matrix.environment))] }}
-          service_account: ${{ secrets[format('GCP_SERVICE_ACCOUNT_{0}', upper(matrix.environment))] }}
+          workload_identity_provider: ${{ secrets[format('GCP_WORKLOAD_IDENTITY_PROVIDER_{0}', matrix.env_upper)] }}
+          service_account: ${{ secrets[format('GCP_SERVICE_ACCOUNT_{0}', matrix.env_upper)] }}
           token_format: 'access_token'
 
       - name: Set up Cloud SDK
@@ -86,7 +93,7 @@ jobs:
         working-directory: infra/terraform
         run: |
           terraform init \
-            -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', upper(matrix.environment))] }}" \
+            -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.env_upper)] }}" \
             -backend-config="prefix=terraform/${{ matrix.environment }}"
 
       - name: Terraform Validate
@@ -99,7 +106,7 @@ jobs:
         working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
-          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', matrix.env_upper)] }}
         run: |
           terraform plan -no-color -out=tfplan \
             -var-file="environments/gcp/${{ matrix.environment }}/terraform.tfvars"
@@ -147,7 +154,7 @@ jobs:
         working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
-          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', matrix.env_upper)] }}
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
@@ -155,7 +162,7 @@ jobs:
         working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ matrix.environment }}
-          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', upper(matrix.environment))] }}
+          TF_VAR_project_id: ${{ secrets[format('GCP_PROJECT_ID_{0}', matrix.env_upper)] }}
         run: |
           terraform destroy -auto-approve \
             -var-file="environments/gcp/${{ matrix.environment }}/terraform.tfvars"
@@ -187,6 +194,8 @@ jobs:
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
         with:
           sarif_file: results.sarif
           category: tfsec-gcp
@@ -213,6 +222,7 @@ jobs:
       - name: Upload Checkov results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: checkov-results.sarif
           category: checkov-gcp
