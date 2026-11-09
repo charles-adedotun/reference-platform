@@ -83,7 +83,9 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(httprate.LimitByIP(100, time.Minute))
+	r.Use(httprate.LimitBy(100, time.Minute, func(r *http.Request) (string, error) {
+		return httprate.CanonicalizeIP(r.RemoteAddr), nil
+	}))
 
 	// Health check routes
 	r.Get("/health", healthHandler.Health)
