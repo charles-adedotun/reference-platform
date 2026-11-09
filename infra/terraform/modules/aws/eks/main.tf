@@ -12,8 +12,9 @@ module "eks" {
   control_plane_subnet_ids = var.control_plane_subnet_ids
 
   # Cluster endpoint access
-  cluster_endpoint_public_access  = var.cluster_endpoint_public_access
-  cluster_endpoint_private_access = var.cluster_endpoint_private_access
+  cluster_endpoint_public_access       = var.cluster_endpoint_public_access
+  cluster_endpoint_private_access      = var.cluster_endpoint_private_access
+  cluster_endpoint_public_access_cidrs = ["10.0.0.0/8"]
 
   # IRSA (IAM Roles for Service Accounts)
   enable_irsa = true

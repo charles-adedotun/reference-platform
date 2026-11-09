@@ -11,29 +11,6 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "go"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-    groups:
-      go-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
-  # Legacy correlator cleanup entry (clears orphaned dependabot-go_modules-apps-taskflow graph snapshot)
-  - package-ecosystem: "gomod"
-    directory: "/apps-taskflow"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
     open-pull-requests-limit: 0
 
   # Docker images
@@ -44,13 +21,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
+    open-pull-requests-limit: 0
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -60,20 +31,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+    open-pull-requests-limit: 0
 
   # Terraform (AWS)
   - package-ecosystem: "terraform"
@@ -86,14 +44,7 @@ updates:
       day: "tuesday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "terraform"
-      - "aws"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
+    open-pull-requests-limit: 0
 
   # Terraform (GCP)
   - package-ecosystem: "terraform"
@@ -106,11 +57,4 @@ updates:
       day: "tuesday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "terraform"
-      - "gcp"
-    commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
+    open-pull-requests-limit: 0

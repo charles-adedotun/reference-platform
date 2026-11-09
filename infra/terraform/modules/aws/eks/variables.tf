@@ -28,7 +28,7 @@ variable "control_plane_subnet_ids" {
 variable "cluster_endpoint_public_access" {
   description = "Enable public API server endpoint"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "cluster_endpoint_private_access" {

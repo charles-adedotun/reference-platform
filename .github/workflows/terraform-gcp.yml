@@ -214,11 +214,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          working_directory: infra/terraform
-          format: sarif
-          sarif_file: results.sarif
+          scan-type: 'config'
+          scan-ref: 'infra/terraform'
+          format: 'sarif'
+          output: 'results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v4
