@@ -369,10 +369,10 @@ aws iam get-role --role-name <role-name>
 ## Module Documentation
 
 For detailed module documentation, see:
-- **Network**: `/Users/krysp/Downloads/projects/github/reference-platform/infra/terraform/modules/aws/network/`
-- **EKS**: `/Users/krysp/Downloads/projects/github/reference-platform/infra/terraform/modules/aws/eks/`
-- **IAM OIDC**: `/Users/krysp/Downloads/projects/github/reference-platform/infra/terraform/modules/aws/iam-oidc/`
-- **State Backend**: `/Users/krysp/Downloads/projects/github/reference-platform/infra/terraform/modules/aws/state-backend/`
+- **Network**: `infra/terraform/modules/aws/network/`
+- **EKS**: `infra/terraform/modules/aws/eks/`
+- **IAM OIDC**: `infra/terraform/modules/aws/iam-oidc/`
+- **State Backend**: `infra/terraform/modules/aws/state-backend/`
 
 For comprehensive documentation, see:
 - **README-AWS.md**: Complete guide with architecture details
