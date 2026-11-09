@@ -1,4 +1,9 @@
+# tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "terraform_state" {
+  # checkov:skip=CKV_AWS_18:Terraform state bucket access is audited via AWS CloudTrail data events rather than recursive S3 access log buckets
+  # checkov:skip=CKV_AWS_144:Single-region Terraform state backend with S3 versioning enabled; cross-region replication is not required for reference architecture
+  # checkov:skip=CKV_AWS_145:Supports optional customer-managed KMS key via var.kms_key_id and defaults to SSE-S3 (AES256) for zero-cost bootstrap
+  # checkov:skip=CKV2_AWS_62:Event notifications are not required for Terraform state backend bucket
   bucket = var.bucket_name
 
   tags = merge(
@@ -50,6 +55,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
     id     = "delete-old-versions"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = var.noncurrent_version_expiration_days
     }
@@ -58,6 +65,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
   rule {
     id     = "abort-incomplete-multipart-uploads"
     status = "Enabled"
+
+    filter {}
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7

@@ -89,7 +89,12 @@ variable "gke_master_authorized_networks" {
     cidr_block   = string
     display_name = string
   }))
-  default = []
+  default = [
+    {
+      cidr_block   = "10.0.0.0/8"
+      display_name = "Internal VPC"
+    }
+  ]
 }
 
 variable "gke_node_pools" {
@@ -107,6 +112,7 @@ variable "gke_node_pools" {
     auto_upgrade       = optional(bool, true)
     preemptible        = optional(bool, false)
     initial_node_count = optional(number, 3)
+    node_metadata      = optional(string, "GKE_METADATA")
   }))
   default = [
     {
@@ -117,6 +123,7 @@ variable "gke_node_pools" {
       disk_size_gb       = 100
       disk_type          = "pd-ssd"
       initial_node_count = 3
+      node_metadata      = "GKE_METADATA"
     }
   ]
 }

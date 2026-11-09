@@ -3,7 +3,7 @@
 
 terraform {
   backend "gcs" {
-    bucket = "your-terraform-state-bucket"  # REPLACE with your state bucket name
+    bucket = "your-terraform-state-bucket" # REPLACE with your state bucket name
     prefix = "environments/gcp/dev"
   }
 }

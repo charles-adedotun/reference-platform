@@ -42,9 +42,9 @@ variable "labels" {
 module "terraform_state_backend" {
   source = "../../modules/gcp/state-backend"
 
-  project_id   = var.project_id
-  bucket_name  = var.bucket_name
-  location     = var.region
+  project_id    = var.project_id
+  bucket_name   = var.bucket_name
+  location      = var.region
   storage_class = "STANDARD"
 
   enable_versioning = true

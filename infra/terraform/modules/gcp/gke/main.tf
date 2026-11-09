@@ -2,20 +2,21 @@
 # Creates a private GKE cluster using terraform-google-modules
 
 module "gke" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
   version = "~> 31.0"
 
-  project_id              = var.project_id
-  name                    = var.cluster_name
-  region                  = var.region
-  regional                = var.regional
-  zones                   = var.zones
-  network                 = var.network_name
-  subnetwork              = var.subnetwork_name
-  ip_range_pods           = var.ip_range_pods
-  ip_range_services       = var.ip_range_services
-  release_channel         = var.release_channel
-  kubernetes_version      = var.kubernetes_version
+  project_id               = var.project_id
+  name                     = var.cluster_name
+  region                   = var.region
+  regional                 = var.regional
+  zones                    = var.zones
+  network                  = var.network_name
+  subnetwork               = var.subnetwork_name
+  ip_range_pods            = var.ip_range_pods
+  ip_range_services        = var.ip_range_services
+  release_channel          = var.release_channel
+  kubernetes_version       = var.kubernetes_version
   remove_default_node_pool = true
 
   # Private cluster configuration

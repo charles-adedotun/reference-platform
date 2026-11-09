@@ -42,7 +42,7 @@ output "github_actions_config" {
   description = "Configuration values for GitHub Actions workflow"
   value = var.create_service_account ? {
     workload_identity_provider = google_iam_workload_identity_pool_provider.github.name
-    service_account           = google_service_account.github_actions[0].email
-    project_id                = var.project_id
+    service_account            = google_service_account.github_actions[0].email
+    project_id                 = var.project_id
   } : null
 }

@@ -1,0 +1,8 @@
+# Intentional architectural trade-offs and upstream module static-eval rules for Trivy config scanning:
+# AWS-0104: EKS worker nodes in private subnets require outbound HTTPS egress (via NAT Gateway)
+# to pull container images from public registries (e.g., ghcr.io) and communicate with AWS APIs.
+AWS-0104
+
+# GCP-0057: GKE node pools configure node_metadata = "GKE_METADATA" and identity_namespace = "${var.project_id}.svc.id.goog",
+# which depends on runtime var.project_id inside terraform-google-modules/kubernetes-engine/google.
+GCP-0057

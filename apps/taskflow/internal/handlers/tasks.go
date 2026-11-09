@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/reference-platform/taskflow/internal/database"
@@ -98,7 +99,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(ctx, "GetTask")
 	defer span.End()
 
-	taskID := chi.URLParam(r, "id")
+	taskID := sanitizeLogParam(chi.URLParam(r, "id"))
 	span.SetAttributes(attribute.String("task.id", taskID))
 
 	task, err := h.db.GetTask(ctx, taskID)
@@ -143,7 +144,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(ctx, "UpdateTask")
 	defer span.End()
 
-	taskID := chi.URLParam(r, "id")
+	taskID := sanitizeLogParam(chi.URLParam(r, "id"))
 	span.SetAttributes(attribute.String("task.id", taskID))
 
 	var req models.UpdateTaskRequest
@@ -187,7 +188,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracer.Start(ctx, "DeleteTask")
 	defer span.End()
 
-	taskID := chi.URLParam(r, "id")
+	taskID := sanitizeLogParam(chi.URLParam(r, "id"))
 	span.SetAttributes(attribute.String("task.id", taskID))
 
 	if err := h.db.DeleteTask(ctx, taskID); err != nil {
@@ -217,4 +218,10 @@ func (h *TaskHandler) respondJSON(w http.ResponseWriter, status int, data interf
 // respondError sends an error response
 func (h *TaskHandler) respondError(w http.ResponseWriter, status int, message string) {
 	h.respondJSON(w, status, ErrorResponse{Error: message})
+}
+
+func sanitizeLogParam(s string) string {
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
 }

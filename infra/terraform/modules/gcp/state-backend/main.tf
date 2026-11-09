@@ -1,7 +1,9 @@
 # GCP State Backend Module
 # Creates a GCS bucket for Terraform state storage with uniform access and versioning
 
+# tfsec:ignore:google-storage-bucket-encryption-customer-key
 resource "google_storage_bucket" "terraform_state" {
+  # checkov:skip=CKV_GCP_62:Terraform state bucket access is audited via Cloud Audit Logs rather than separate GCS access log buckets
   project       = var.project_id
   name          = var.bucket_name
   location      = var.location

@@ -12,6 +12,7 @@ resource "google_iam_workload_identity_pool" "github" {
 
 # Workload Identity Provider for GitHub Actions
 resource "google_iam_workload_identity_pool_provider" "github" {
+  # checkov:skip=CKV_GCP_125:OIDC provider restricts repository via coalesce(var.attribute_condition, allowed_repository) and IAM principalSet binding
   project                            = var.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
   workload_identity_pool_provider_id = var.provider_id
@@ -20,13 +21,13 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   disabled                           = false
 
   attribute_mapping = {
-    "google.subject"       = "assertion.sub"
-    "attribute.actor"      = "assertion.actor"
-    "attribute.repository" = "assertion.repository"
+    "google.subject"             = "assertion.sub"
+    "attribute.actor"            = "assertion.actor"
+    "attribute.repository"       = "assertion.repository"
     "attribute.repository_owner" = "assertion.repository_owner"
   }
 
-  attribute_condition = var.attribute_condition
+  attribute_condition = coalesce(var.attribute_condition, "assertion.repository == '${var.allowed_repository}'")
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"

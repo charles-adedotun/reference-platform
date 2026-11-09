@@ -44,24 +44,24 @@ module "network" {
     ]
   }
 
-  enable_flow_logs        = var.enable_flow_logs
-  enable_nat              = var.enable_nat
-  nat_region              = local.region
-  create_firewall_rules   = true
+  enable_flow_logs      = var.enable_flow_logs
+  enable_nat            = var.enable_nat
+  nat_region            = local.region
+  create_firewall_rules = true
 }
 
 # GKE Cluster Module
 module "gke" {
   source = "../../../modules/gcp/gke"
 
-  project_id      = local.project_id
-  cluster_name    = "${var.project_name}-${local.environment}-gke"
-  region          = local.region
-  regional        = var.gke_regional
-  zones           = var.gke_zones
-  network_name    = module.network.network_name
-  subnetwork_name = module.network.subnets_names[0]
-  ip_range_pods   = "pods"
+  project_id        = local.project_id
+  cluster_name      = "${var.project_name}-${local.environment}-gke"
+  region            = local.region
+  regional          = var.gke_regional
+  zones             = var.gke_zones
+  network_name      = module.network.network_name
+  subnetwork_name   = module.network.subnets_names[0]
+  ip_range_pods     = "pods"
   ip_range_services = "services"
 
   release_channel         = var.gke_release_channel
@@ -129,10 +129,10 @@ module "workload_identity" {
 
   attribute_condition = var.github_attribute_condition
 
-  create_service_account        = true
-  service_account_id            = "${var.project_name}-${local.environment}-github-actions"
-  service_account_display_name  = "GitHub Actions - ${upper(local.environment)}"
-  service_account_description   = "Service account for GitHub Actions in ${local.environment}"
+  create_service_account       = true
+  service_account_id           = "${var.project_name}-${local.environment}-github-actions"
+  service_account_display_name = "GitHub Actions - ${upper(local.environment)}"
+  service_account_description  = "Service account for GitHub Actions in ${local.environment}"
 
   allowed_repository      = var.github_repository
   additional_repositories = var.github_additional_repositories

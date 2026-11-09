@@ -1,4 +1,5 @@
 module "vpc" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
@@ -18,7 +19,7 @@ module "vpc" {
   public_subnet_tags = merge(
     var.additional_public_subnet_tags,
     {
-      "kubernetes.io/role/elb" = "1"
+      "kubernetes.io/role/elb"                    = "1"
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     }
   )
@@ -26,7 +27,7 @@ module "vpc" {
   private_subnet_tags = merge(
     var.additional_private_subnet_tags,
     {
-      "kubernetes.io/role/internal-elb" = "1"
+      "kubernetes.io/role/internal-elb"           = "1"
       "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     }
   )

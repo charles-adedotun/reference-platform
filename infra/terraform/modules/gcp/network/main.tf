@@ -2,6 +2,7 @@
 # Creates a VPC with subnets and Cloud NAT using terraform-google-modules
 
 module "vpc" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-google-modules/network/google"
   version = "~> 9.0"
 
@@ -9,16 +10,22 @@ module "vpc" {
   network_name = var.network_name
   routing_mode = var.routing_mode
 
-  subnets = var.subnets
+  subnets = [
+    for subnet in var.subnets : merge(
+      subnet,
+      {
+        subnet_private_access = tostring(subnet.subnet_private_access)
+        subnet_flow_logs      = tostring(var.enable_flow_logs)
+      },
+      var.enable_flow_logs ? {
+        subnet_flow_logs_interval = "INTERVAL_5_SEC"
+        subnet_flow_logs_sampling = "0.5"
+        subnet_flow_logs_metadata = "INCLUDE_ALL_METADATA"
+      } : {}
+    )
+  ]
 
   secondary_ranges = var.secondary_ranges
-
-  # Enable flow logs for network monitoring
-  log_config = var.enable_flow_logs ? {
-    aggregation_interval = "INTERVAL_5_SEC"
-    flow_sampling        = 0.5
-    metadata             = "INCLUDE_ALL_METADATA"
-  } : null
 }
 
 # Cloud Router for Cloud NAT
@@ -36,6 +43,7 @@ resource "google_compute_router" "router" {
 
 # Cloud NAT for private GKE clusters to access internet
 module "cloud_nat" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-google-modules/cloud-nat/google"
   version = "~> 5.0"
 
@@ -49,10 +57,8 @@ module "cloud_nat" {
 
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
-  log_config = {
-    enable = true
-    filter = "ERRORS_ONLY"
-  }
+  log_config_enable = true
+  log_config_filter = "ERRORS_ONLY"
 }
 
 # Firewall rules
@@ -76,7 +82,7 @@ resource "google_compute_firewall" "allow_internal" {
     protocol = "icmp"
   }
 
-  source_ranges = [for subnet in var.subnets : subnet.ip_cidr_range]
+  source_ranges = [for subnet in var.subnets : subnet.subnet_ip]
   priority      = 1000
 }
 

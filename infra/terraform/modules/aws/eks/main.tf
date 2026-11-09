@@ -1,6 +1,7 @@
 module "eks" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 20.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -30,14 +31,14 @@ module "eks" {
       before_compute = true
       configuration_values = jsonencode({
         env = {
-          ENABLE_PREFIX_DELEGATION = "true"
-          ENABLE_POD_ENI           = "true"
+          ENABLE_PREFIX_DELEGATION          = "true"
+          ENABLE_POD_ENI                    = "true"
           POD_SECURITY_GROUP_ENFORCING_MODE = "standard"
         }
       })
     }
     aws-ebs-csi-driver = {
-      most_recent = true
+      most_recent              = true
       service_account_role_arn = module.ebs_csi_irsa.iam_role_arn
     }
   }
@@ -62,6 +63,7 @@ module "eks" {
 
 # IRSA for EBS CSI Driver
 module "ebs_csi_irsa" {
+  # checkov:skip=CKV_TF_1:Using official Terraform Registry module with pinned major semantic version constraint
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.0"
 

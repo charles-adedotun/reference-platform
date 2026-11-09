@@ -11,7 +11,7 @@
 #   5. After creation, configure backend.tf in your environments to use these buckets
 
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.5.0"
 
   required_providers {
     aws = {
@@ -47,12 +47,12 @@ module "state_backend" {
   source   = "../../modules/aws/state-backend"
   for_each = local.environments
 
-  bucket_name  = "${var.project_name}-terraform-state-${each.key}"
-  environment  = each.key
-  kms_key_id   = var.enable_kms_encryption ? var.kms_key_id : null
+  bucket_name = "${var.project_name}-terraform-state-${each.key}"
+  environment = each.key
+  kms_key_id  = var.enable_kms_encryption ? var.kms_key_id : null
 
-  enable_lifecycle_policy             = var.enable_lifecycle_policy
-  noncurrent_version_expiration_days  = var.noncurrent_version_expiration_days
+  enable_lifecycle_policy            = var.enable_lifecycle_policy
+  noncurrent_version_expiration_days = var.noncurrent_version_expiration_days
 
   # DynamoDB table for legacy locking (optional)
   # Set to false if using S3 native locking (use_lockfile=true)

@@ -20,7 +20,7 @@ output "dynamodb_table_names" {
 
 output "next_steps" {
   description = "Instructions for next steps"
-  value = <<-EOT
+  value       = <<-EOT
 
     Terraform state buckets have been created successfully!
 

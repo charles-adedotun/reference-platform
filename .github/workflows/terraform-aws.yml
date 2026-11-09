@@ -46,6 +46,36 @@ env:
   AWS_REGION: 'us-east-1'
 
 jobs:
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        working-directory: infra/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init & Validate (AWS Modules)
+        run: |
+          export TF_PLUGIN_CACHE_DIR="$RUNNER_TEMP/tf-plugin-cache"
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          for dir in \
+            infra/terraform/bootstrap/aws \
+            infra/terraform/environments/aws/dev \
+            infra/terraform/environments/aws/staging \
+            infra/terraform/environments/aws/prod; do
+            echo "=== Validating $dir ==="
+            terraform -chdir="$dir" init -backend=false -no-color
+            terraform -chdir="$dir" validate -no-color
+          done
+
   terraform:
     name: Terraform ${{ matrix.environment }}
     if: github.event_name == 'workflow_dispatch'
@@ -81,11 +111,10 @@ jobs:
         id: fmt
         working-directory: infra/terraform
         run: terraform fmt -check -recursive
-        continue-on-error: true
 
       - name: Terraform Init
         id: init
-        working-directory: infra/terraform
+        working-directory: infra/terraform/environments/aws/${{ matrix.environment }}
         run: |
           terraform init \
             -backend-config="bucket=${{ secrets[format('TF_STATE_BUCKET_{0}', matrix.env_upper)] }}" \
@@ -94,18 +123,17 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        working-directory: infra/terraform
+        working-directory: infra/terraform/environments/aws/${{ matrix.environment }}
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        working-directory: infra/terraform
+        working-directory: infra/terraform/environments/aws/${{ matrix.environment }}
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
           terraform plan -no-color -out=tfplan \
-            -var-file="environments/aws/${{ matrix.environment }}/terraform.tfvars"
-        continue-on-error: true
+            -var-file="terraform.tfvars"
 
       - name: Create Plan Summary
         if: github.event_name == 'pull_request'
@@ -146,26 +174,26 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
-        working-directory: infra/terraform
+        working-directory: infra/terraform/environments/aws/${{ matrix.environment }}
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy
         if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
-        working-directory: infra/terraform
+        working-directory: infra/terraform/environments/aws/${{ matrix.environment }}
         env:
           TF_VAR_environment: ${{ matrix.environment }}
         run: |
           terraform destroy -auto-approve \
-            -var-file="environments/aws/${{ matrix.environment }}/terraform.tfvars"
+            -var-file="terraform.tfvars"
 
       - name: Upload Terraform Plan
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v6
         with:
           name: tfplan-${{ matrix.environment }}
-          path: infra/terraform/tfplan
+          path: infra/terraform/environments/aws/${{ matrix.environment }}/tfplan
           retention-days: 5
 
   tfsec:
@@ -183,12 +211,11 @@ jobs:
         with:
           working_directory: infra/terraform
           format: sarif
-          soft_fail: true
+          sarif_file: results.sarif
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v4
         if: always()
-        continue-on-error: true
         with:
           sarif_file: results.sarif
           category: tfsec-aws
@@ -210,12 +237,10 @@ jobs:
           framework: terraform
           output_format: sarif
           output_file_path: checkov-results.sarif
-          soft_fail: true
 
       - name: Upload Checkov results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
-        continue-on-error: true
         with:
           sarif_file: checkov-results.sarif
           category: checkov-aws
