@@ -112,7 +112,7 @@ jobs:
           go build -v -o bin/cron ./cmd/cron
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build Docker image (API)
         uses: docker/build-push-action@v6
